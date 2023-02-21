@@ -528,6 +528,7 @@ void checkMouse(XEvent *e)
 	}
 }
 extern void messageRain();
+extern void messageUmbrella();
 int checkKeys(XEvent *e)
 {
 	//keyboard input?
@@ -568,7 +569,10 @@ int checkKeys(XEvent *e)
 			g.showUmbrella ^= 1;
 			break;
 		case XK_p:
+			//serafin feature
+			messageUmbrella();
 			umbrella.shape ^= 1;
+			
 			break;
 		case XK_r:
 			//show message by Param

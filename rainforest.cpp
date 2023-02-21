@@ -527,7 +527,7 @@ void checkMouse(XEvent *e)
 		savey = e->xbutton.y;
 	}
 }
-
+extern void messageRain();
 int checkKeys(XEvent *e)
 {
 	//keyboard input?
@@ -571,6 +571,8 @@ int checkKeys(XEvent *e)
 			umbrella.shape ^= 1;
 			break;
 		case XK_r:
+			//show message by Param
+			messageRain();
 			g.showRain ^= 1;
 			break;
 		case XK_Left:

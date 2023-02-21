@@ -13,7 +13,7 @@
 //Press B to see bigfoot roaming his forest.
 //
 
-void wetness level(float color) {
+void wetness_level(float color) {
     color[1] += 0.01;
     color[2] -= 0.01;
     if (color[1] > 1.0) {

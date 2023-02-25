@@ -1,4 +1,4 @@
-//3350
+//3350 
 //program: rainforest.cpp
 //author:  Gordon Griesel
 //date:    2013 to 2021
@@ -529,6 +529,7 @@ void checkMouse(XEvent *e)
 }
 extern void messageRain();
 extern void messageUmbrella();
+extern void messageDeflect();
 int checkKeys(XEvent *e)
 {
 	//keyboard input?
@@ -554,6 +555,7 @@ int checkKeys(XEvent *e)
 			break;
 		case XK_d:
 			g.deflection ^= 1;
+            messageDeflect();
 			break;
 		case XK_f:
 			g.forest ^= 1;
@@ -576,7 +578,7 @@ int checkKeys(XEvent *e)
 			break;
 		case XK_r:
 			//show message by Param
-			messageRain();
+           	messageRain();
 			g.showRain ^= 1;
 			break;
 		case XK_Left:

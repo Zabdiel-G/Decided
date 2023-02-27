@@ -530,6 +530,7 @@ void checkMouse(XEvent *e)
 extern void messageRain();
 extern void messageUmbrella();
 extern void messageDeflect();
+extern void messageTrees();
 int checkKeys(XEvent *e)
 {
 	//keyboard input?
@@ -565,6 +566,8 @@ int checkKeys(XEvent *e)
 			printf("silhouette: %i\n", g.silhouette);
 			break;
 		case XK_t:
+            //Zabsiel's Feature
+            messageTrees();
 			g.trees ^= 1;
 			break;
 		case XK_u:

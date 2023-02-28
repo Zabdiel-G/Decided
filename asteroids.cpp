@@ -56,6 +56,7 @@ extern double timeDiff(struct timespec *start, struct timespec *end);
 extern void timeCopy(struct timespec *dest, struct timespec *source);
 //-----------------------------------------------------------------------------
 //member's function
+extern void messageZ();
 extern void messageK();
 extern void messageFire();
 
@@ -519,6 +520,10 @@ int check_keys(XEvent *e)
 			break;
 		case XK_minus:
 			break;
+        case XK_z:
+            messageZ();
+            break;
+                                                                        
 	}
 	return 0;
 }

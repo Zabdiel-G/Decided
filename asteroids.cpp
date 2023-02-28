@@ -55,6 +55,9 @@ extern double timeSpan;
 extern double timeDiff(struct timespec *start, struct timespec *end);
 extern void timeCopy(struct timespec *dest, struct timespec *source);
 //-----------------------------------------------------------------------------
+//member's function
+extern void messageK();
+
 
 class Global {
 public:
@@ -504,6 +507,8 @@ int check_keys(XEvent *e)
 	switch (key) {
 		case XK_Escape:
 			return 1;
+        case XK_k:
+            messageK();
 		case XK_f:
 			break;
 		case XK_s:

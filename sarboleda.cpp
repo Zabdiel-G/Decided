@@ -6,5 +6,5 @@ using namespace std;
 
 void messageK(){
 
-    cout << "The letter K has been preseed" << endl;
+    cout << "The letter K has been pressed" << endl;
 }

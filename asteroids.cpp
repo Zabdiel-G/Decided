@@ -57,7 +57,7 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 //-----------------------------------------------------------------------------
 //member's function
 extern void messageK();
-
+extern void messageFire();
 
 class Global {
 public:
@@ -743,6 +743,7 @@ void physics()
 	if (gl.keys[XK_space]) {
 		//a little time between each bullet
 		struct timespec bt;
+        messageFire();
 		clock_gettime(CLOCK_REALTIME, &bt);
 		double ts = timeDiff(&g.bulletTimer, &bt);
 		if (ts > 0.1) {

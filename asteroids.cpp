@@ -59,6 +59,7 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 extern void messageZ();
 extern void messageK();
 extern void messageFire();
+extern void messageF();
 
 class Global {
 public:
@@ -510,8 +511,9 @@ int check_keys(XEvent *e)
 			return 1;
         case XK_k:
             messageK();
-		case XK_f:
-			break;
+	    break;
+	case XK_f: //param's feature
+	    messageF();
 		case XK_s:
 			break;
 		case XK_Down:

@@ -719,34 +719,76 @@ void physics()
 	}
 	//---------------------------------------------------
 	//check keys pressed now
+    //movement change by Serafin.
+    //Fix: changing the asteroid-style movement into a 
+    //more traditional top-down 
+    Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
+    //convert angle to a vector
+    Flt xdir = cos(rad);
+    Flt ydir = sin(rad);
+    Flt speed = 0;
+    float MAX_SPEED = 1;
+
+
 	if (gl.keys[XK_Left]) {
-		g.ship.angle += 4.0;
-		if (g.ship.angle >= 360.0f)
-			g.ship.angle -= 360.0f;
-	}
+
+        g.ship.angle = 90;
+        g.ship.vel[1] = 0;
+        g.ship.vel[0] += xdir*0.50f;
+        speed = g.ship.vel[0]*0.50;
+        if (speed < -MAX_SPEED) {
+            speed = -MAX_SPEED;
+            normalize2d(g.ship.vel);
+            g.ship.vel[0] *= abs(speed);
+        }
+    }
 	if (gl.keys[XK_Right]) {
-		g.ship.angle -= 4.0;
-		if (g.ship.angle < 0.0f)
-			g.ship.angle += 360.0f;
+        
+        g.ship.angle = 270;
+        g.ship.vel[1] = 0;
+        g.ship.vel[0] += xdir*0.50f;
+        speed = g.ship.vel[0]*0.50;
+        if (speed > MAX_SPEED) {
+            speed = MAX_SPEED;
+            normalize2d(g.ship.vel);
+            g.ship.vel[0] *= abs(speed);
+        }
+    }
+    if (gl.keys[XK_Up]) {
+        
+        g.ship.angle = 0;
+        g.ship.vel[0] = 0;
+        g.ship.vel[1] += ydir*0.50f;
+        speed = g.ship.vel[1]*0.50;
+        if (speed > MAX_SPEED * 1.5) {
+            speed = MAX_SPEED * 1.5;
+            normalize2d(g.ship.vel);
+            g.ship.vel[1] *= abs(speed);
+        }
 	}
-	if (gl.keys[XK_Up]) {
-		//apply thrust
-		//convert ship angle to radians
-		Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
-		//convert angle to a vector
-		Flt xdir = cos(rad);
-		Flt ydir = sin(rad);
-		g.ship.vel[0] += xdir*0.02f;
-		g.ship.vel[1] += ydir*0.02f;
-		Flt speed = sqrt(g.ship.vel[0]*g.ship.vel[0]+
-				g.ship.vel[1]*g.ship.vel[1]);
-		if (speed > 10.0f) {
-			speed = 10.0f;
-			normalize2d(g.ship.vel);
-			g.ship.vel[0] *= speed;
-			g.ship.vel[1] *= speed;
-		}
-	}
+    if (gl.keys[XK_Down]) {
+        
+        g.ship.angle = 180;
+        g.ship.vel[0] = 0;
+        g.ship.vel[1] += ydir*0.50f;
+        speed = g.ship.vel[1]*0.50;
+        if (speed < -MAX_SPEED * 1.5) {
+            speed = -MAX_SPEED * 1.5;
+            normalize2d(g.ship.vel);
+            g.ship.vel[1] *= abs(speed);
+        }
+    }
+    //if nothing is happening then slow the ship down
+
+
+    if (!gl.keys[XK_Left] && !gl.keys[XK_Right] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
+        while (g.ship.vel[0] > 0 || g.ship.vel[0] < 0
+                    ||g.ship.vel[1] > 0 || g.ship.vel[1] < 0) {
+                g.ship.vel[1] *= .01;
+                g.ship.vel[0] *= .01;
+        }
+    }
+
 	if (gl.keys[XK_space]) {
 		//a little time between each bullet
 		struct timespec bt;

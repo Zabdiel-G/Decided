@@ -65,10 +65,12 @@ class Global {
 public:
 	int xres, yres;
 	char keys[65536];
+    bool serafinFeature;
 	Global() {
 		xres = 640;
 		yres = 480;
 		memset(keys, 0, 65536);
+        serafinFeature = false;
 	}
 } gl;
 
@@ -511,10 +513,13 @@ int check_keys(XEvent *e)
 			return 1;
         case XK_k:
             messageK();
-	    break;
-	case XK_f: //param's feature
+	        break;
+	    case XK_f: //param's feature
 	    messageF();
+            break;
 		case XK_s:
+        gl.serafinFeature = true;
+        std::cout << "feature mode activate" << std::endl; 
 			break;
 		case XK_Down:
 			break;
@@ -729,7 +734,6 @@ void physics()
     Flt speed = 0;
     float MAX_SPEED = 1;
 
-
 	if (gl.keys[XK_Left]) {
 
         g.ship.angle = 90;
@@ -787,6 +791,91 @@ void physics()
                 g.ship.vel[1] *= .01;
                 g.ship.vel[0] *= .01;
         }
+    }
+    extern void dodgeRight(float p[3]);
+    float dashSpeed = 20;
+    if (gl.keys[XK_Shift_L]) {
+        if (gl.keys[XK_Right]) {
+                g.ship.angle = 270;
+                g.ship.vel[1] = 0;
+                g.ship.vel[0] = dashSpeed;
+
+        }
+
+        if (gl.keys[XK_Left]) {
+                g.ship.angle = 90;
+                g.ship.vel[1] = 0;
+                g.ship.vel[0] = -dashSpeed;
+                
+        }
+        if (gl.keys[XK_Up]) {
+                g.ship.angle = 0;
+                g.ship.vel[1] = dashSpeed;
+                g.ship.vel[0] = 0;
+                
+        }
+        if (gl.keys[XK_Down] ) {
+                g.ship.angle = 180;
+                g.ship.vel[1] = -dashSpeed;
+                g.ship.vel[0] = 0;
+        }
+     }
+    if (1) {
+
+        Rect s;
+        s.bot = gl.yres/2;
+        s.left = gl.xres/2;
+        s.center = 1;
+        ggprint8b(&s, 0, 0x00ff0000, "Serafin Feature Mode!");
+      
+
+        if (gl.keys[XK_Shift_L]) {
+            if (gl.keys[XK_Right]) {
+                g.ship.angle = 270;
+                g.ship.vel[1] = 0;
+                g.ship.vel[0] = dashSpeed; 
+                g.ship.color[0] = 100.0f;
+                g.ship.color[1] = 100.0f;
+                g.ship.color[2] = 100.0f;
+            }
+
+            if (gl.keys[XK_Left]) {
+                g.ship.angle = 90;
+                g.ship.vel[1] = 0;
+                g.ship.vel[0] = -dashSpeed;
+                g.ship.color[0] = 150.0f;
+                g.ship.color[1] = 150.0f;
+                g.ship.color[2] = 150.0f;
+
+            }
+            if (gl.keys[XK_Up]) {
+                g.ship.angle = 0;
+                g.ship.vel[1] = dashSpeed;
+                g.ship.vel[0] = 0;
+                g.ship.color[0] = 50.0f;
+                g.ship.color[1] = 50.0f;
+                g.ship.color[2] = 50.0f;
+
+            }
+            if (gl.keys[XK_Down] ) {
+                g.ship.angle = 180;
+                g.ship.vel[1] = -dashSpeed;
+                g.ship.vel[0] = 0;
+                g.ship.color[0] = 200.0f;
+                g.ship.color[1] = 200.0f;
+                g.ship.color[1] = 200.0f;
+
+
+            }
+        }
+
+
+
+
+
+
+
+
     }
 
 	if (gl.keys[XK_space]) {

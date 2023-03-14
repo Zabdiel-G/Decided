@@ -21,6 +21,9 @@
 #include "log.h"
 #include "fonts.h"
 
+#define MAX_ASTEROIDS 10
+
+
 //defined types
 typedef float Flt;
 typedef float Vec[3];
@@ -129,6 +132,9 @@ public:
 	Ship ship;
 	Asteroid *ahead;
 	Bullet *barr;
+	Asteroid *aarr;
+        int width;
+        int height;
 	int nasteroids;
 	int nbullets;
 	struct timespec bulletTimer;
@@ -374,6 +380,25 @@ void init_opengl(void)
 	initialize_fonts();
 }
 
+
+void createNewAsteroid(Game *g) //new mode param
+{
+    if (g->nasteroids < MAX_ASTEROIDS) {
+        Asteroid *a = &g->aarr[g->nasteroids];
+        a->pos[0] = rnd()*g->width;
+        a->pos[1] = rnd()*g->height;
+        a->vel[0] = rnd()*2.0-1.0;
+        a->vel[1] = rnd()*2.0-1.0;
+        a->color[0] = 0.8f;
+        a->color[1] = 0.8f;
+        a->color[2] = 0.8f;
+        a->color[3] = 1.8f;
+        a->radius = rnd()*80.0 + 40.0;
+        ++g->nasteroids;
+    }
+}
+
+
 void normalize2d(Vec v)
 {
 	Flt len = v[0]*v[0] + v[1]*v[1];
@@ -499,13 +524,38 @@ int check_keys(XEvent *e)
 			shift = 0;
 		return 0;
 	}
+
 	if (e->type == KeyPress) {
 		//std::cout << "press" << std::endl;
 		gl.keys[key]=1;
 		if (key == XK_Shift_L || key == XK_Shift_R) {
 			shift = 1;
-			return 0;
 		}
+	        if (e->type == KeyPress) {  //params added code
+            gl.keys[key] = 1;
+            if (key == XK_Escape) {
+                return 1;
+            }
+            if (key == XK_space) {
+                createNewAsteroid(&g);
+            }
+            if (key == XK_Left) {
+                g.ship.angle += 4.0;
+                if (g.ship.angle >= 360.0f)
+                    g.ship.angle -= 360.0f;
+            }
+            if (key == XK_Right) {
+                g.ship.angle -= 4.0;
+                if(g.ship.angle < 0.0f)
+                   g.ship.angle += 360.0;
+            }
+            if (key == XK_Up) {
+                g.mouseThrustOn = true;
+                clock_gettime(CLOCK_REALTIME, &g.mouseThrustTimer);
+            }
+        }
+		return 0; //param code end
+
 	}
 	(void)shift;
 	switch (key) {

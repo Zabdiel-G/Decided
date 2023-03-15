@@ -328,13 +328,15 @@ void render();
 //==========================================================================
 int main()
 {
+    extern bool startMenu();
+    int done=0;
+    if (startMenu()) {
 	logOpen();
 	init_opengl();
 	srand(time(NULL));
 	clock_gettime(CLOCK_REALTIME, &timePause);
 	clock_gettime(CLOCK_REALTIME, &timeStart);
 	x11.set_mouse_position(100,100);
-	int done=0;
 	while (!done) {
 		while (x11.getXPending()) {
 			XEvent e = x11.getXNextEvent();
@@ -355,6 +357,7 @@ int main()
 	}
 	cleanup_fonts();
 	logClose();
+    }
 	return 0;
 }
 

@@ -64,16 +64,20 @@ extern void messageK();
 extern void messageFire();
 extern void messageF();
 
+extern void obstRend();
+
 class Global {
 public:
 	int xres, yres;
 	char keys[65536];
     bool serafinFeature;
+    bool obstR;
 	Global() {
 		xres = 640;
 		yres = 480;
 		memset(keys, 0, 65536);
         serafinFeature = false;
+        obstR = false;
 	}
 } gl;
 
@@ -328,15 +332,15 @@ void render();
 //==========================================================================
 int main()
 {
-    extern bool startMenu();
-    int done=0;
-    if (startMenu()) {
+    //extern bool startMenu();
+    //if (startMenu()) {
 	logOpen();
 	init_opengl();
 	srand(time(NULL));
 	clock_gettime(CLOCK_REALTIME, &timePause);
 	clock_gettime(CLOCK_REALTIME, &timeStart);
 	x11.set_mouse_position(100,100);
+    int done=0;
 	while (!done) {
 		while (x11.getXPending()) {
 			XEvent e = x11.getXNextEvent();
@@ -353,11 +357,14 @@ int main()
 			physicsCountdown -= physicsRate;
 		}
 		render();
+        if(gl.obstR){
+            obstRend();
+        }
 		x11.swapBuffers();
 	}
 	cleanup_fonts();
 	logClose();
-    }
+    //}
 	return 0;
 }
 
@@ -533,7 +540,9 @@ int check_keys(XEvent *e)
 		gl.keys[key]=1;
 		if (key == XK_Shift_L || key == XK_Shift_R) {
 			shift = 1;
-		}
+            return 0;
+        }
+
 	        if (e->type == KeyPress) {  //params added code
             gl.keys[key] = 1;
             if (key == XK_Escape) {
@@ -557,7 +566,7 @@ int check_keys(XEvent *e)
                 clock_gettime(CLOCK_REALTIME, &g.mouseThrustTimer);
             }
         }
-		return 0; //param code end
+        //return 0; //param code end
 
 	}
 	(void)shift;
@@ -580,7 +589,8 @@ int check_keys(XEvent *e)
 			break;
 		case XK_minus:
 			break;
-        case XK_z:
+        case XK_z: // ZAB'S FEATURE
+            gl.obstR = !gl.obstR;
             messageZ();
             break;
                                                                         

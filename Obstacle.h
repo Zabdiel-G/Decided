@@ -2,6 +2,8 @@
 //Modified by: Zabdiel Garcia
 //
 
+#include <cstring>
+
 #ifndef Obstacle_H
 #define Obstacle_H
 
@@ -16,7 +18,7 @@ class Obstacle
         memcpy(color, col, sizeof(unsigned char) *3);
     }
     Obstacle() {
-        w = 85.0f;
+        w = 50.0f;
         h = 15.0f;
         pos[0] = 0;
         pos[1] = 0;

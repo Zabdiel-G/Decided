@@ -20,7 +20,9 @@
 #include <GL/glx.h>
 #include "log.h"
 #include "fonts.h"
-
+#include <time.h>
+#include <chrono>
+#include "sarboleda.h"
 #define MAX_ASTEROIDS 10
 
 
@@ -49,6 +51,7 @@ const Flt MINIMUM_ASTEROID_SIZE = 60.0;
 
 //-----------------------------------------------------------------------------
 //Setup timers
+const double dodgeCooldown = 2.0;
 const double physicsRate = 1.0 / 60.0;
 const double oobillion = 1.0 / 1e9;
 extern struct timespec timeStart, timeCurrent;
@@ -57,14 +60,17 @@ extern double physicsCountdown;
 extern double timeSpan;
 extern double timeDiff(struct timespec *start, struct timespec *end);
 extern void timeCopy(struct timespec *dest, struct timespec *source);
+Timer dodgeTimer;
 //-----------------------------------------------------------------------------
 //member's function
 extern void messageZ();
 extern void messageK();
 extern void messageFire();
 extern void messageF();
-
 extern void obstRend();
+
+using namespace std::chrono;
+
 
 class Global {
 public:
@@ -72,12 +78,14 @@ public:
 	char keys[65536];
     bool serafinFeature;
     bool obstR;
+    bool dodgePressing;
 	Global() {
 		xres = 640;
 		yres = 480;
 		memset(keys, 0, 65536);
         serafinFeature = false;
         obstR = false;
+        dodgePressing = false;
 	}
 } gl;
 
@@ -89,6 +97,8 @@ public:
 	Vec acc;
 	float angle;
 	float color[3];
+    bool canDodge;
+    
 public:
 	Ship() {
 		pos[0] = (Flt)(gl.xres/2);
@@ -99,6 +109,7 @@ public:
 		VecZero(acc);
 		angle = 0.0;
 		color[0] = color[1] = color[2] = 1.0;
+        canDodge = true;
 	}
 };
 
@@ -142,6 +153,7 @@ public:
 	int nasteroids;
 	int nbullets;
 	struct timespec bulletTimer;
+    struct timespec dodgeTimer;
 	struct timespec mouseThrustTimer;
 	bool mouseThrustOn;
 public:
@@ -183,6 +195,8 @@ public:
 			++nasteroids;
 		}
 		clock_gettime(CLOCK_REALTIME, &bulletTimer);
+        clock_gettime(CLOCK_REALTIME, &dodgeTimer);
+
 	}
 	~Game() {
 		delete [] barr;
@@ -320,12 +334,23 @@ public:
 } x11(gl.xres, gl.yres);
 // ---> for fullscreen x11(0, 0);
 
+/*bool canDodge() {
+    struct timespec currentTime;
+    clock_gettime(CLOCK_REALTIME, &currentTime); // get current system time
+
+    double timeSinceLastDodge = (currentTime.tv_sec - lastDodgeTime) + (double)(currentTime.tv_nsec - lastDodgeTime) / 1000000000.0; // calculate time since last dodge in seconds
+
+    return timeSinceLastDodge >= 2.0; // return true if enough time has passed since last dodge
+}*/
+
 //function prototypes
 void init_opengl(void);
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
 void physics();
 void render();
+//bool canDodge();
+void dodgeCdTracker();
 
 //==========================================================================
 // M A I N
@@ -435,7 +460,7 @@ void check_mouse(XEvent *e)
 		return;
 	}
 	if (e->type == ButtonPress) {
-		if (e->xbutton.button==1) {
+		/*if (e->xbutton.button==1) {
 			//Left button is down
 			//a little time between each bullet
 			struct timespec bt;
@@ -469,7 +494,7 @@ void check_mouse(XEvent *e)
 		}
 		if (e->xbutton.button==3) {
 			//Right button is down
-		}
+		}*/
 	}
 	//keys[XK_Up] = 0;
 	if (savex != e->xbutton.x || savey != e->xbutton.y) {
@@ -624,7 +649,17 @@ void deleteAsteroid(Game *g, Asteroid *node)
 	delete node;
 	node = NULL;
 }
+/*void dodgeCdTracker() {
+    g.ship.canDodge = false;
+    dodgeTimer.reset();
+    if (dodgeTimer.elapsedTime() > 2.0f) {
+        std::cout << "2 sec" << std::endl;
+        g.ship.canDodge = true;
+    }
 
+
+
+}*/
 void buildAsteroidFragment(Asteroid *ta, Asteroid *a)
 {
 	//build ta from a
@@ -659,16 +694,23 @@ void physics()
 	g.ship.pos[1] += g.ship.vel[1];
 	//Check for collision with window edges
 	if (g.ship.pos[0] < 0.0) {
-		g.ship.pos[0] += (float)gl.xres;
+		g.ship.pos[0] = 0.0;
+        g.ship.vel[0] = -g.ship.vel[0]*0.0005;
 	}
 	else if (g.ship.pos[0] > (float)gl.xres) {
-		g.ship.pos[0] -= (float)gl.xres;
+		//g.ship.pos[0] -= (float)gl.xres;
+        g.ship.pos[0] = (float)gl.xres;
+        g.ship.vel[0] = -g.ship.vel[0]*0.00005; 
 	}
 	else if (g.ship.pos[1] < 0.0) {
-		g.ship.pos[1] += (float)gl.yres;
+        g.ship.pos[1] = 0.0;
+        g.ship.vel[1] = -g.ship.vel[1]*0.00005;
+		//g.ship.pos[1] += (float)gl.yres;
 	}
 	else if (g.ship.pos[1] > (float)gl.yres) {
-		g.ship.pos[1] -= (float)gl.yres;
+		//g.ship.pos[1] -= (float)gl.yres;
+        g.ship.pos[1] = (float)gl.yres;
+        g.ship.vel[1] = -g.ship.vel[1] *0.0005;
 	}
 	//
 	//
@@ -798,10 +840,9 @@ void physics()
     float MAX_SPEED = 1;
 
 	if (gl.keys[XK_Left]) {
-
         g.ship.angle = 90;
         g.ship.vel[1] = 0;
-        g.ship.vel[0] += xdir*0.50f;
+        g.ship.vel[0] += xdir*0.50f; 
         speed = g.ship.vel[0]*0.50;
         if (speed < -MAX_SPEED) {
             speed = -MAX_SPEED;
@@ -847,22 +888,31 @@ void physics()
     }
     //if nothing is happening then slow the ship down
 
-
-    if (!gl.keys[XK_Left] && !gl.keys[XK_Right] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
+    if (!gl.keys[XK_Left] && !gl.keys[XK_Right] && !gl.keys[XK_Up]
+            && !gl.keys[XK_Down]) {
         while (g.ship.vel[0] > 0 || g.ship.vel[0] < 0
                     ||g.ship.vel[1] > 0 || g.ship.vel[1] < 0) {
-                g.ship.vel[1] *= .01;
-                g.ship.vel[0] *= .01;
+                g.ship.vel[1] *= .5;
+                g.ship.vel[0] *= .5;
         }
     }
     extern void dodgeRight(float p[3]);
-    float dashSpeed = 20;
-    if (gl.keys[XK_Shift_L]) {
-        if (gl.keys[XK_Right]) {
-                g.ship.angle = 270;
-                g.ship.vel[1] = 0;
-                g.ship.vel[0] = dashSpeed;
+    float dashSpeed = 50;
+    if (!gl.keys[XK_Shift_L]) {
+        gl.dodgePressing = false;
+    }
+    if (gl.keys[XK_Shift_L] 
+          /* && gl.serafinFeature == false && g.ship.canDodge == true*/
+            && gl.dodgePressing == false) {
 
+        gl.dodgePressing = true; 
+
+        if (gl.keys[XK_Right]) {
+               g.ship.angle = 270;
+               g.ship.vel[1] = 0;
+               g.ship.vel[0] = dashSpeed;
+
+              // dodgeCdTracker(); 
         }
 
         if (gl.keys[XK_Left]) {
@@ -883,16 +933,9 @@ void physics()
                 g.ship.vel[0] = 0;
         }
      }
-    if (1) {
+    if (gl.serafinFeature) {
 
-        Rect s;
-        s.bot = gl.yres/2;
-        s.left = gl.xres/2;
-        s.center = 1;
-        ggprint8b(&s, 0, 0x00ff0000, "Serafin Feature Mode!");
-      
-
-        if (gl.keys[XK_Shift_L]) {
+        if (gl.keys[XK_Shift_L] && g.ship.canDodge == true) {
             if (gl.keys[XK_Right]) {
                 g.ship.angle = 270;
                 g.ship.vel[1] = 0;
@@ -931,12 +974,6 @@ void physics()
 
             }
         }
-
-
-
-
-
-
 
 
     }
@@ -996,6 +1033,10 @@ void render()
 	ggprint8b(&r, 16, 0x00ff0000, "3350 - Asteroids");
 	ggprint8b(&r, 16, 0x00ffff00, "n bullets: %i", g.nbullets);
 	ggprint8b(&r, 16, 0x00ffff00, "n asteroids: %i", g.nasteroids);
+    if (gl.serafinFeature) {
+       ggprint8b(&r, 16, 0x00ffff00, "Serafin's Feature Mode");
+
+    }
 	//-------------------------------------------------------------------------
 	//Draw the ship
 	glColor3fv(g.ship.color);

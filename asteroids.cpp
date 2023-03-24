@@ -79,6 +79,8 @@ public:
     bool serafinFeature;
     bool obstR;
     bool dodgePressing;
+    bool swordSlash;
+    bool canPressSword;
 	Global() {
 		xres = 640;
 		yres = 480;
@@ -86,6 +88,8 @@ public:
         serafinFeature = false;
         obstR = false;
         dodgePressing = false;
+        swordSlash = false;
+        canPressSword = true;
 	}
 } gl;
 
@@ -98,7 +102,8 @@ public:
 	float angle;
 	float color[3];
     bool canDodge;
-    
+   
+   // bool swordSlash;
 public:
 	Ship() {
 		pos[0] = (Flt)(gl.xres/2);
@@ -110,6 +115,7 @@ public:
 		angle = 0.0;
 		color[0] = color[1] = color[2] = 1.0;
         canDodge = true;
+       
 	}
 };
 
@@ -499,7 +505,7 @@ void check_mouse(XEvent *e)
 	//keys[XK_Up] = 0;
 	if (savex != e->xbutton.x || savey != e->xbutton.y) {
 		//Mouse moved
-		int xdiff = savex - e->xbutton.x;
+/*		int xdiff = savex - e->xbutton.x;
 		int ydiff = savey - e->xbutton.y;
 		if (++ct < 10)
 			return;		
@@ -540,7 +546,7 @@ void check_mouse(XEvent *e)
 		}
 		x11.set_mouse_position(100,100);
 		savex = 100;
-		savey = 100;
+		savey = 100;*/
 	}
 }
 
@@ -688,14 +694,22 @@ void buildAsteroidFragment(Asteroid *ta, Asteroid *a)
 
 void physics()
 {
+    float MAX_SPEED = 1;
 	Flt d0,d1,dist;
 	//Update ship position
 	g.ship.pos[0] += g.ship.vel[0];
 	g.ship.pos[1] += g.ship.vel[1];
 	//Check for collision with window edges
 	if (g.ship.pos[0] < 0.0) {
-		g.ship.pos[0] = 0.0;
-        g.ship.vel[0] = -g.ship.vel[0]*0.0005;
+        if (g.ship.vel[0] < MAX_SPEED ) {
+            g.ship.pos[0] = 0.0;
+            g.ship.vel[0] = -g.ship.vel[0]*.01;
+        }
+        else {
+		    g.ship.pos[0] = 0.0;
+            g.ship.vel[0] = -g.ship.vel[0]*0.0005;
+        }
+
 	}
 	else if (g.ship.pos[0] > (float)gl.xres) {
 		//g.ship.pos[0] -= (float)gl.xres;
@@ -715,6 +729,7 @@ void physics()
 	//
 	//
 	//Update bullet positions
+if (!gl.serafinFeature) {
 	struct timespec bt;
 	clock_gettime(CLOCK_REALTIME, &bt);
 	int i = 0;
@@ -748,6 +763,7 @@ void physics()
 		}
 		++i;
 	}
+
 	//
 	//Update asteroid positions
 	Asteroid *a = g.ahead;
@@ -827,6 +843,7 @@ void physics()
 			break;
 		a = a->next;
 	}
+}
 	//---------------------------------------------------
 	//check keys pressed now
     //movement change by Serafin.
@@ -837,7 +854,7 @@ void physics()
     Flt xdir = cos(rad);
     Flt ydir = sin(rad);
     Flt speed = 0;
-    float MAX_SPEED = 1;
+   // float MAX_SPEED = 1;
 
 	if (gl.keys[XK_Left]) {
         g.ship.angle = 90;
@@ -978,10 +995,20 @@ void physics()
 
     }
 
+    if (gl.keys[XK_x] && gl.canPressSword == true) {
+    gl.swordSlash = !gl.swordSlash;
+    gl.canPressSword = false;
+     }
+
+    if (!gl.keys[XK_x]) {
+        gl.swordSlash = false;
+        gl.canPressSword = true;
+    }
+
 	if (gl.keys[XK_space]) {
 		//a little time between each bullet
 		struct timespec bt;
-        messageFire();
+        //messageFire();
 		clock_gettime(CLOCK_REALTIME, &bt);
 		double ts = timeDiff(&g.bulletTimer, &bt);
 		if (ts > 0.1) {
@@ -991,6 +1018,7 @@ void physics()
 				//Bullet *b = new Bullet;
 				Bullet *b = &g.barr[g.nbullets];
 				timeCopy(&b->time, &bt);
+                
 				b->pos[0] = g.ship.pos[0];
 				b->pos[1] = g.ship.pos[1];
 				b->vel[0] = g.ship.vel[0];
@@ -1024,6 +1052,14 @@ void physics()
 
 void render()
 {
+    int i;
+    //draw thrust
+    Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
+    //convert angle to a vector
+    Flt xdir = cos(rad);
+    Flt ydir = sin(rad);
+    
+
 	Rect r;
 	glClear(GL_COLOR_BUFFER_BIT);
 	//
@@ -1044,7 +1080,31 @@ void render()
 	glTranslatef(g.ship.pos[0], g.ship.pos[1], g.ship.pos[2]);
 	//float angle = atan2(ship.dir[1], ship.dir[0]);
 	glRotatef(g.ship.angle, 0.0f, 0.0f, 1.0f);
-	glBegin(GL_TRIANGLES);
+    glBegin(GL_QUADS);
+            glVertex2f(-20.0f, -20.0f);
+            glVertex2f(-20.0f,  20.0f);
+            glVertex2f( 20.0f,  20.0f);
+            glVertex2f( 20.0f, -20.0f);
+        glEnd();
+        glPopMatrix();
+    //Sword 
+    if(gl.swordSlash == true) {
+        glColor3f(100.0f, 100.0f, 100.0f);
+        glPushMatrix();
+        glColor3f(100.0f, 100.0f, 100.0f);
+    // glTranslatef(30.0f, 0.0f, 0.0f)
+        //glTranslatef(g.ship.pos[0], g.ship.pos[1], g.ship.pos[2]);
+        glTranslatef(g.ship.pos[0]+ (xdir*25.0f), g.ship.pos[1]+ (ydir*25.0f), g.ship.pos[2]);
+        glRotatef(g.ship.angle, 0.0f, 0.0f, 1.0f);
+        glBegin(GL_QUADS);
+            glVertex2f(-40.0f, -20.0f);
+            glVertex2f(-40.0f,  20.0f);
+            glVertex2f( 40.0f,  20.0f);
+            glVertex2f( 40.0f, -20.0f);
+        glEnd();
+        glPopMatrix();
+    }
+	/*glBegin(GL_TRIANGLES);
 	//glVertex2f(-10.0f, -10.0f);
 	//glVertex2f(  0.0f, 20.0f);
 	//glVertex2f( 10.0f, -10.0f);
@@ -1059,14 +1119,14 @@ void render()
 	glBegin(GL_POINTS);
 	glVertex2f(0.0f, 0.0f);
 	glEnd();
-	glPopMatrix();
-	if (gl.keys[XK_Up] || g.mouseThrustOn) {
-		int i;
+	glPopMatrix();*/
+	if ( g.mouseThrustOn) {
+		/*int i;
 		//draw thrust
 		Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
 		//convert angle to a vector
 		Flt xdir = cos(rad);
-		Flt ydir = sin(rad);
+		Flt ydir = sin(rad);*/
 		Flt xs,ys,xe,ye,r;
 		glBegin(GL_LINES);
 		for (i=0; i<16; i++) {
@@ -1083,7 +1143,7 @@ void render()
 	}
 	//-------------------------------------------------------------------------
 	//Draw the asteroids
-	{
+/*	{
 		Asteroid *a = g.ahead;
 		while (a) {
 			//Log("draw asteroid...\n");
@@ -1108,7 +1168,7 @@ void render()
 			glEnd();
 			a = a->next;
 		}
-	}
+	}*/
 	//-------------------------------------------------------------------------
 	//Draw the bullets
 	for (int i=0; i<g.nbullets; i++) {

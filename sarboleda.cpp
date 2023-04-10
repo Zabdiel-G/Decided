@@ -1,5 +1,6 @@
 //File name: sarboleda.cpp
 //author: serafin arboleda
+#include <cmath>
 #include <iostream>
 #include "sarboleda.h"
 using namespace std;
@@ -23,6 +24,34 @@ float Timer::elapsedTime() {
     duration<float> elapse_time = _current_time - _start_time;
     return elapse_time.count();
 }
+
+Sword::Sword() {
+    damage = 1;
+    width = 40.0f;
+    height = 20.0f;
+    pos[0] = 0.0f;
+    pos[1] = 0.0f;
+    color[0] = 100.0f;
+    color[1] = 100.0f;
+    color[2] = 100.0f;
+    
+}
+
+Player::Player() {
+     pos[0] = 0.0f;
+     pos[1] = 0.0f;
+     pos[2] = 0.0f;
+     rad = ((angle+90)/360.0f) * PI * 2.0;
+     maxSpeed = 1;
+     speed = 0;
+     VecZero(dir);
+     VecZero(vel);
+     VecZero(acc);
+     angle = 0.0;
+     color[0] = color[1] = color[2] = 1.0;
+     canDodge = true;
+}
+
 
 float dashSpeed = 20;
 void messageK(){

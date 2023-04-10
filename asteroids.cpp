@@ -68,10 +68,10 @@ extern void messageK();
 extern void messageFire();
 extern void messageF();
 extern void obstRend();
-
 using namespace std::chrono;
-
-
+Sword sword;
+Player player;
+int count = 0;
 class Global {
 public:
 	int xres, yres;
@@ -92,6 +92,7 @@ public:
         canPressSword = true;
 	}
 } gl;
+
 
 class Ship {
 public:
@@ -151,16 +152,18 @@ public:
 class Game {
 public:
 	Ship ship;
+    Player player;
 	Asteroid *ahead;
 	Bullet *barr;
 	Asteroid *aarr;
-        int width;
-        int height;
+    int width;
+    int height;
 	int nasteroids;
 	int nbullets;
 	struct timespec bulletTimer;
     struct timespec dodgeTimer;
 	struct timespec mouseThrustTimer;
+    struct timespec slashTimer;
 	bool mouseThrustOn;
 public:
 	Game() {
@@ -202,6 +205,7 @@ public:
 		}
 		clock_gettime(CLOCK_REALTIME, &bulletTimer);
         clock_gettime(CLOCK_REALTIME, &dodgeTimer);
+        clock_gettime(CLOCK_REALTIME, &slashTimer);
 
 	}
 	~Game() {
@@ -363,6 +367,9 @@ void dodgeCdTracker();
 //==========================================================================
 int main()
 {
+    g.player.pos[0] = (Flt)(gl.xres/2);
+    g.player.pos[1] = (Flt)(gl.yres/2);
+    g.player.pos[2] = 0.0f;
     //extern bool startMenu();
     //if (startMenu()) {
 	logOpen();
@@ -384,6 +391,8 @@ int main()
 		timeCopy(&timeStart, &timeCurrent);
 		physicsCountdown += timeSpan;
 		while (physicsCountdown >= physicsRate) {
+            //std::cout << count << std::endl;
+            //count++;
 			physics();
 			physicsCountdown -= physicsRate;
 		}
@@ -582,7 +591,7 @@ int check_keys(XEvent *e)
             if (key == XK_space) {
                 createNewAsteroid(&g);
             }
-            if (key == XK_Left) {
+           /* if (key == XK_Left) {
                 g.ship.angle += 4.0;
                 if (g.ship.angle >= 360.0f)
                     g.ship.angle -= 360.0f;
@@ -591,7 +600,7 @@ int check_keys(XEvent *e)
                 g.ship.angle -= 4.0;
                 if(g.ship.angle < 0.0f)
                    g.ship.angle += 360.0;
-            }
+            }*/
             if (key == XK_Up) {
                 g.mouseThrustOn = true;
                 clock_gettime(CLOCK_REALTIME, &g.mouseThrustTimer);
@@ -611,7 +620,7 @@ int check_keys(XEvent *e)
 	    messageF();
             break;
 		case XK_s:
-        gl.serafinFeature = true;
+        gl.serafinFeature = !gl.serafinFeature;
         std::cout << "feature mode activate" << std::endl; 
 			break;
 		case XK_Down:
@@ -694,42 +703,40 @@ void buildAsteroidFragment(Asteroid *ta, Asteroid *a)
 
 void physics()
 {
-    float MAX_SPEED = 1;
 	Flt d0,d1,dist;
+    float MAX_SPEED = 1;
 	//Update ship position
-	g.ship.pos[0] += g.ship.vel[0];
-	g.ship.pos[1] += g.ship.vel[1];
+	g.player.pos[0] += g.player.vel[0];
+	g.player.pos[1] += g.player.vel[1];
 	//Check for collision with window edges
-	if (g.ship.pos[0] < 0.0) {
-        if (g.ship.vel[0] < MAX_SPEED ) {
-            g.ship.pos[0] = 0.0;
-            g.ship.vel[0] = -g.ship.vel[0]*.01;
+	if (g.player.pos[0] < 0.0) {
+        if (g.player.vel[0] < MAX_SPEED ) {
+            g.player.pos[0] = 0.0;
+            g.player.vel[0] = -g.player.vel[0]*.01;
         }
         else {
-		    g.ship.pos[0] = 0.0;
-            g.ship.vel[0] = -g.ship.vel[0]*0.0005;
+		    g.player.pos[0] = 0.0;
+            g.player.vel[0] = -g.player.vel[0]*0.00005;
         }
 
 	}
-	else if (g.ship.pos[0] > (float)gl.xres) {
+	else if (g.player.pos[0] > (float)gl.xres) {
 		//g.ship.pos[0] -= (float)gl.xres;
-        g.ship.pos[0] = (float)gl.xres;
-        g.ship.vel[0] = -g.ship.vel[0]*0.00005; 
+        g.player.pos[0] = (float)gl.xres;
+        g.player.vel[0] = -g.player.vel[0]*0.00005; 
 	}
-	else if (g.ship.pos[1] < 0.0) {
-        g.ship.pos[1] = 0.0;
-        g.ship.vel[1] = -g.ship.vel[1]*0.00005;
-		//g.ship.pos[1] += (float)gl.yres;
+	else if (g.player.pos[1] < 0.0) {
+        g.player.pos[1] = 0.0;
+        g.player.vel[1] = -g.player.vel[1]*0.00005;
 	}
-	else if (g.ship.pos[1] > (float)gl.yres) {
-		//g.ship.pos[1] -= (float)gl.yres;
-        g.ship.pos[1] = (float)gl.yres;
-        g.ship.vel[1] = -g.ship.vel[1] *0.0005;
+	else if (g.player.pos[1] > (float)gl.yres) {
+        g.player.pos[1] = (float)gl.yres;
+        g.player.vel[1] = -g.player.vel[1] *0.00005;
 	}
 	//
 	//
 	//Update bullet positions
-if (!gl.serafinFeature) {
+    if (!gl.serafinFeature) {
 	struct timespec bt;
 	clock_gettime(CLOCK_REALTIME, &bt);
 	int i = 0;
@@ -843,74 +850,81 @@ if (!gl.serafinFeature) {
 			break;
 		a = a->next;
 	}
-}
+    }
+
+    //sword collision with bullet
+    
+
+    
 	//---------------------------------------------------
 	//check keys pressed now
     //movement change by Serafin.
     //Fix: changing the asteroid-style movement into a 
     //more traditional top-down 
-    Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
+    Flt rad = ((g.player.angle+90.0) / 360.0f) * PI * 2.0;
     //convert angle to a vector
     Flt xdir = cos(rad);
     Flt ydir = sin(rad);
     Flt speed = 0;
-   // float MAX_SPEED = 1;
-
+    //float MAX_SPEED = 1;
+   
 	if (gl.keys[XK_Left]) {
-        g.ship.angle = 90;
-        g.ship.vel[1] = 0;
-        g.ship.vel[0] += xdir*0.50f; 
-        speed = g.ship.vel[0]*0.50;
-        if (speed < -MAX_SPEED) {
-            speed = -MAX_SPEED;
-            normalize2d(g.ship.vel);
-            g.ship.vel[0] *= abs(speed);
-        }
+       
+       g.player.angle = 90;
+       g.player.vel[1] = 0;
+       g.player.vel[0] += xdir*0.50f; 
+       speed = g.player.vel[0];
+       if (speed < -MAX_SPEED) {
+           speed = -MAX_SPEED;
+           normalize2d(g.player.vel);
+           g.player.vel[0] *= abs(speed);
+       }
     }
 	if (gl.keys[XK_Right]) {
         
-        g.ship.angle = 270;
-        g.ship.vel[1] = 0;
-        g.ship.vel[0] += xdir*0.50f;
-        speed = g.ship.vel[0]*0.50;
+        g.player.angle = 270;
+        g.player.vel[1] = 0;
+        g.player.vel[0] += xdir*0.50f;
+        speed = g.player.vel[0]*0.50;
         if (speed > MAX_SPEED) {
             speed = MAX_SPEED;
-            normalize2d(g.ship.vel);
-            g.ship.vel[0] *= abs(speed);
+            normalize2d(g.player.vel);
+            g.player.vel[0] *= abs(speed);
         }
     }
     if (gl.keys[XK_Up]) {
         
-        g.ship.angle = 0;
-        g.ship.vel[0] = 0;
-        g.ship.vel[1] += ydir*0.50f;
-        speed = g.ship.vel[1]*0.50;
+        g.player.angle = 0;
+        g.player.vel[0] = 0;
+        g.player.vel[1] += ydir*0.50f;
+        speed = g.player.vel[1]*0.50;
         if (speed > MAX_SPEED * 1.5) {
             speed = MAX_SPEED * 1.5;
-            normalize2d(g.ship.vel);
-            g.ship.vel[1] *= abs(speed);
+            normalize2d(g.player.vel);
+            g.player.vel[1] *= abs(speed);
         }
 	}
+
     if (gl.keys[XK_Down]) {
-        
-        g.ship.angle = 180;
-        g.ship.vel[0] = 0;
-        g.ship.vel[1] += ydir*0.50f;
-        speed = g.ship.vel[1]*0.50;
+        g.player.angle = 180;
+        g.player.vel[0] = 0;
+        g.player.vel[1] += ydir*0.50f;
+        speed = g.player.vel[1]*0.50;
         if (speed < -MAX_SPEED * 1.5) {
             speed = -MAX_SPEED * 1.5;
-            normalize2d(g.ship.vel);
-            g.ship.vel[1] *= abs(speed);
+            normalize2d(g.player.vel);
+            g.player.vel[1] *= abs(speed);
         }
     }
+
     //if nothing is happening then slow the ship down
 
     if (!gl.keys[XK_Left] && !gl.keys[XK_Right] && !gl.keys[XK_Up]
             && !gl.keys[XK_Down]) {
-        while (g.ship.vel[0] > 0 || g.ship.vel[0] < 0
-                    ||g.ship.vel[1] > 0 || g.ship.vel[1] < 0) {
-                g.ship.vel[1] *= .5;
-                g.ship.vel[0] *= .5;
+        while (g.player.vel[0] > 0 || g.player.vel[0] < 0
+                    ||g.player.vel[1] > 0 || g.player.vel[1] < 0) {
+                g.player.vel[1] *= .5;
+                g.player.vel[0] *= .5;
         }
     }
     extern void dodgeRight(float p[3]);
@@ -925,68 +939,68 @@ if (!gl.serafinFeature) {
         gl.dodgePressing = true; 
 
         if (gl.keys[XK_Right]) {
-               g.ship.angle = 270;
-               g.ship.vel[1] = 0;
-               g.ship.vel[0] = dashSpeed;
+               g.player.angle = 270;
+               g.player.vel[1] = 0;
+               g.player.vel[0] = dashSpeed;
 
               // dodgeCdTracker(); 
         }
 
         if (gl.keys[XK_Left]) {
-                g.ship.angle = 90;
-                g.ship.vel[1] = 0;
-                g.ship.vel[0] = -dashSpeed;
+                g.player.angle = 90;
+                g.player.vel[1] = 0;
+                g.player.vel[0] = -dashSpeed;
                 
         }
         if (gl.keys[XK_Up]) {
-                g.ship.angle = 0;
-                g.ship.vel[1] = dashSpeed;
-                g.ship.vel[0] = 0;
+                g.player.angle = 0;
+                g.player.vel[1] = dashSpeed;
+                g.player.vel[0] = 0;
                 
         }
         if (gl.keys[XK_Down] ) {
-                g.ship.angle = 180;
-                g.ship.vel[1] = -dashSpeed;
-                g.ship.vel[0] = 0;
+                g.player.angle = 180;
+                g.player.vel[1] = -dashSpeed;
+                g.player.vel[0] = 0;
         }
      }
     if (gl.serafinFeature) {
 
-        if (gl.keys[XK_Shift_L] && g.ship.canDodge == true) {
+        if (gl.keys[XK_Shift_L] && g.player.canDodge == true) {
             if (gl.keys[XK_Right]) {
-                g.ship.angle = 270;
-                g.ship.vel[1] = 0;
-                g.ship.vel[0] = dashSpeed; 
-                g.ship.color[0] = 100.0f;
-                g.ship.color[1] = 100.0f;
-                g.ship.color[2] = 100.0f;
+                g.player.angle = 270;
+                g.player.vel[1] = 0;
+                g.player.vel[0] = dashSpeed; 
+                g.player.color[0] = 100.0f;
+                g.player.color[1] = 100.0f;
+                g.player.color[2] = 100.0f;
             }
 
             if (gl.keys[XK_Left]) {
-                g.ship.angle = 90;
-                g.ship.vel[1] = 0;
-                g.ship.vel[0] = -dashSpeed;
-                g.ship.color[0] = 150.0f;
-                g.ship.color[1] = 150.0f;
-                g.ship.color[2] = 150.0f;
+                g.player.angle = 90;
+                g.player.vel[1] = 0;
+                g.player.vel[0] = -dashSpeed;
+                g.player.color[0] = 150.0f;
+                g.player.color[1] = 150.0f;
+                g.player.color[2] = 150.0f;
 
             }
             if (gl.keys[XK_Up]) {
-                g.ship.angle = 0;
-                g.ship.vel[1] = dashSpeed;
-                g.ship.vel[0] = 0;
-                g.ship.color[0] = 50.0f;
-                g.ship.color[1] = 50.0f;
-                g.ship.color[2] = 50.0f;
+                g.player.angle = 0;
+                g.player.vel[1] = dashSpeed;
+                g.player.vel[0] = 0;
+                g.player.color[0] = 50.0f;
+                g.player.color[1] = 50.0f;
+                g.player.color[2] = 50.0f;
 
             }
             if (gl.keys[XK_Down] ) {
-                g.ship.angle = 180;
-                g.ship.vel[1] = -dashSpeed;
-                g.ship.vel[0] = 0;
-                g.ship.color[0] = 200.0f;
-                g.ship.color[1] = 200.0f;
-                g.ship.color[1] = 200.0f;
+                g.player.angle = 180;
+                g.player.vel[1] = -dashSpeed;
+                g.player.vel[0] = 0;
+                g.player.color[0] = 200.0f;
+                g.player.color[1] = 200.0f;
+                g.player.color[1] = 200.0f;
 
 
             }
@@ -996,13 +1010,26 @@ if (!gl.serafinFeature) {
     }
 
     if (gl.keys[XK_x] && gl.canPressSword == true) {
-    gl.swordSlash = !gl.swordSlash;
-    gl.canPressSword = false;
-     }
+        struct timespec st;
+        clock_gettime(CLOCK_REALTIME, &st);
+        double slt = timeDiff(&g.slashTimer, &st);
+       // gl.swordSlash = true;
+        gl.canPressSword = false;
+        if (slt > 1) {
+            timeCopy(&g.slashTimer,&st);
+            gl.canPressSword = false;
+            gl.swordSlash = true;
+            timeCopy(&sword.time, &st);
+        }
+        
+       // gl.canPressSword = false;
+
+    }
 
     if (!gl.keys[XK_x]) {
         gl.swordSlash = false;
-        gl.canPressSword = true;
+        gl.canPressSword = true;        
+        //double st = timeDiff(&
     }
 
 	if (gl.keys[XK_space]) {
@@ -1039,7 +1066,7 @@ if (!gl.serafinFeature) {
 			}
 		}
 	}
-	if (g.mouseThrustOn) {
+    if (g.mouseThrustOn) {
 		//should thrust be turned off
 		struct timespec mtt;
 		clock_gettime(CLOCK_REALTIME, &mtt);
@@ -1075,11 +1102,11 @@ void render()
     }
 	//-------------------------------------------------------------------------
 	//Draw the ship
-	glColor3fv(g.ship.color);
+	glColor3fv(g.player.color);
 	glPushMatrix();
-	glTranslatef(g.ship.pos[0], g.ship.pos[1], g.ship.pos[2]);
+	glTranslatef(g.player.pos[0], g.player.pos[1], g.player.pos[2]);
 	//float angle = atan2(ship.dir[1], ship.dir[0]);
-	glRotatef(g.ship.angle, 0.0f, 0.0f, 1.0f);
+	glRotatef(g.player.angle, 0.0f, 0.0f, 1.0f);
     glBegin(GL_QUADS);
             glVertex2f(-20.0f, -20.0f);
             glVertex2f(-20.0f,  20.0f);
@@ -1089,58 +1116,21 @@ void render()
         glPopMatrix();
     //Sword 
     if(gl.swordSlash == true) {
-        glColor3f(100.0f, 100.0f, 100.0f);
+       // glColor3f(100.0f, 100.0f, 100.0f);
         glPushMatrix();
         glColor3f(100.0f, 100.0f, 100.0f);
     // glTranslatef(30.0f, 0.0f, 0.0f)
         //glTranslatef(g.ship.pos[0], g.ship.pos[1], g.ship.pos[2]);
-        glTranslatef(g.ship.pos[0]+ (xdir*25.0f), g.ship.pos[1]+ (ydir*25.0f), g.ship.pos[2]);
-        glRotatef(g.ship.angle, 0.0f, 0.0f, 1.0f);
+        glTranslatef(g.player.pos[0]+ (xdir*25.0f), g.player.pos[1]+ (ydir*25.0f), g.player.pos[2]);
+        glRotatef(g.player.angle, 0.0f, 0.0f, 1.0f);
         glBegin(GL_QUADS);
-            glVertex2f(-40.0f, -20.0f);
-            glVertex2f(-40.0f,  20.0f);
-            glVertex2f( 40.0f,  20.0f);
-            glVertex2f( 40.0f, -20.0f);
+            glVertex2f(-sword.width, -sword.height);
+            glVertex2f(-sword.width,  sword.height);
+            glVertex2f( sword.width,  sword.height);
+            glVertex2f( sword.width, -sword.height);
         glEnd();
         glPopMatrix();
     }
-	/*glBegin(GL_TRIANGLES);
-	//glVertex2f(-10.0f, -10.0f);
-	//glVertex2f(  0.0f, 20.0f);
-	//glVertex2f( 10.0f, -10.0f);
-	glVertex2f(-12.0f, -10.0f);
-	glVertex2f(  0.0f,  20.0f);
-	glVertex2f(  0.0f,  -6.0f);
-	glVertex2f(  0.0f,  -6.0f);
-	glVertex2f(  0.0f,  20.0f);
-	glVertex2f( 12.0f, -10.0f);
-	glEnd();
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glBegin(GL_POINTS);
-	glVertex2f(0.0f, 0.0f);
-	glEnd();
-	glPopMatrix();*/
-	if ( g.mouseThrustOn) {
-		/*int i;
-		//draw thrust
-		Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
-		//convert angle to a vector
-		Flt xdir = cos(rad);
-		Flt ydir = sin(rad);*/
-		Flt xs,ys,xe,ye,r;
-		glBegin(GL_LINES);
-		for (i=0; i<16; i++) {
-			xs = -xdir * 11.0f + rnd() * 4.0 - 2.0;
-			ys = -ydir * 11.0f + rnd() * 4.0 - 2.0;
-			r = rnd()*40.0+40.0;
-			xe = -xdir * r + rnd() * 18.0 - 9.0;
-			ye = -ydir * r + rnd() * 18.0 - 9.0;
-			glColor3f(rnd()*.3+.7, rnd()*.3+.7, 0);
-			glVertex2f(g.ship.pos[0]+xs,g.ship.pos[1]+ys);
-			glVertex2f(g.ship.pos[0]+xe,g.ship.pos[1]+ye);
-		}
-		glEnd();
-	}
 	//-------------------------------------------------------------------------
 	//Draw the asteroids
 /*	{

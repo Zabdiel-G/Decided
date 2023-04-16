@@ -60,7 +60,6 @@ extern double physicsCountdown;
 extern double timeSpan;
 extern double timeDiff(struct timespec *start, struct timespec *end);
 extern void timeCopy(struct timespec *dest, struct timespec *source);
-Timer dodgeTimer;
 //-----------------------------------------------------------------------------
 //member's function
 extern void messageZ();
@@ -71,25 +70,29 @@ extern void obstRend();
 using namespace std::chrono;
 Sword sword;
 Player player;
-int count = 0;
+extern struct Ability abilities[3];
+bool serafinFeatureMode = false;
+
 class Global {
 public:
 	int xres, yres;
 	char keys[65536];
-    bool serafinFeature;
+   // bool serafinFeature;
     bool obstR;
     bool dodgePressing;
     bool swordSlash;
     bool canPressSword;
+    bool keyPressed;
 	Global() {
 		xres = 640;
 		yres = 480;
 		memset(keys, 0, 65536);
-        serafinFeature = false;
+        //serafinFeature = false;
         obstR = false;
         dodgePressing = false;
         swordSlash = false;
         canPressSword = true;
+        keyPressed = false;
 	}
 } gl;
 
@@ -354,6 +357,7 @@ public:
 }*/
 
 //function prototypes
+
 void init_opengl(void);
 void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
@@ -361,7 +365,8 @@ void physics();
 void render();
 //bool canDodge();
 void dodgeCdTracker();
-
+//extern void updateAbilityCooldowns(*Ability, int);
+//extern void useAbility(&Ability);
 //==========================================================================
 // M A I N
 //==========================================================================
@@ -393,6 +398,7 @@ int main()
 		while (physicsCountdown >= physicsRate) {
             //std::cout << count << std::endl;
             //count++;
+            updateAbilityCooldowns(abilities, 3);
 			physics();
 			physicsCountdown -= physicsRate;
 		}
@@ -469,7 +475,7 @@ void check_mouse(XEvent *e)
 	static int savex = 0;
 	static int savey = 0;
 	//
-	static int ct=0;
+	//static int ct=0;
 	//std::cout << "m" << std::endl << std::flush;
 	if (e->type == ButtonRelease) {
 		return;
@@ -614,14 +620,13 @@ int check_keys(XEvent *e)
 		case XK_Escape:
 			return 1;
         case XK_k:
-            messageK();
 	        break;
 	    case XK_f: //param's feature
-	    messageF();
+	    //messageF();
             break;
 		case XK_s:
-        gl.serafinFeature = !gl.serafinFeature;
-        std::cout << "feature mode activate" << std::endl; 
+        serafinFeatureMode = !serafinFeatureMode;
+        std::cout << "Serafin feature mode activate" << std::endl; 
 			break;
 		case XK_Down:
 			break;
@@ -736,7 +741,7 @@ void physics()
 	//
 	//
 	//Update bullet positions
-    if (!gl.serafinFeature) {
+    if (!serafinFeatureMode) {
 	struct timespec bt;
 	clock_gettime(CLOCK_REALTIME, &bt);
 	int i = 0;
@@ -928,15 +933,15 @@ void physics()
         }
     }
     extern void dodgeRight(float p[3]);
-    float dashSpeed = 50;
+    float dashSpeed = 100;
     if (!gl.keys[XK_Shift_L]) {
         gl.dodgePressing = false;
     }
-    if (gl.keys[XK_Shift_L] 
-          /* && gl.serafinFeature == false && g.ship.canDodge == true*/
-            && gl.dodgePressing == false) {
+    if (gl.keys[XK_Shift_L] && gl.dodgePressing == false
+            && abilities[0].timer == 0) {
 
         gl.dodgePressing = true; 
+        useAbility(abilities[0]);
 
         if (gl.keys[XK_Right]) {
                g.player.angle = 270;
@@ -964,7 +969,12 @@ void physics()
                 g.player.vel[0] = 0;
         }
      }
-    if (gl.serafinFeature) {
+    //std::cout << "Dodge" << abilities[0].timer << std::endl;
+
+    if (serafinFeatureMode) {
+        std::cout << "Dodge" <<  abilities[0].timer << std::endl;
+        std::cout << "Attack" <<  abilities[1].timer << std::endl;
+        std::cout << "Timestop" <<  abilities[2].timer << std::endl;
 
         if (gl.keys[XK_Shift_L] && g.player.canDodge == true) {
             if (gl.keys[XK_Right]) {
@@ -1008,30 +1018,24 @@ void physics()
 
 
     }
-
-    if (gl.keys[XK_x] && gl.canPressSword == true) {
-        struct timespec st;
-        clock_gettime(CLOCK_REALTIME, &st);
-        double slt = timeDiff(&g.slashTimer, &st);
-       // gl.swordSlash = true;
-        gl.canPressSword = false;
-        if (slt > 1) {
-            timeCopy(&g.slashTimer,&st);
-            gl.canPressSword = false;
-            gl.swordSlash = true;
-            timeCopy(&sword.time, &st);
-        }
-        
-       // gl.canPressSword = false;
-
-    }
+    
+    
 
     if (!gl.keys[XK_x]) {
         gl.swordSlash = false;
-        gl.canPressSword = true;        
+        gl.canPressSword = true;
         //double st = timeDiff(&
     }
 
+    if (gl.keys[XK_x] && gl.canPressSword == true && gl.keyPressed == false) {
+        gl.swordSlash = true;
+        gl.canPressSword = false;
+        gl.keyPressed = true;
+    }
+    else if (!gl.keys[XK_x]) {
+        gl.keyPressed  = false;
+    }
+ 
 	if (gl.keys[XK_space]) {
 		//a little time between each bullet
 		struct timespec bt;
@@ -1079,7 +1083,6 @@ void physics()
 
 void render()
 {
-    int i;
     //draw thrust
     Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
     //convert angle to a vector
@@ -1096,7 +1099,9 @@ void render()
 	ggprint8b(&r, 16, 0x00ff0000, "3350 - Asteroids");
 	ggprint8b(&r, 16, 0x00ffff00, "n bullets: %i", g.nbullets);
 	ggprint8b(&r, 16, 0x00ffff00, "n asteroids: %i", g.nasteroids);
-    if (gl.serafinFeature) {
+    int roundedDodge = std::round(abilities[0].timer);
+    ggprint8b(&r, 16, 0x00ffff00, "Cooldown: %i", roundedDodge);
+    if (serafinFeatureMode) {
        ggprint8b(&r, 16, 0x00ffff00, "Serafin's Feature Mode");
 
     }
@@ -1115,12 +1120,21 @@ void render()
         glEnd();
         glPopMatrix();
     //Sword 
+    struct timespec swordTime;
+    bool timerInitiliazed = false;
+    if (!timerInitiliazed) {
+       timerInitiliazed = true;
+       clock_gettime(CLOCK_REALTIME, &swordTime);
+    }
+
     if(gl.swordSlash == true) {
-       // glColor3f(100.0f, 100.0f, 100.0f);
+
+        if (!timerInitiliazed) {
+            timerInitiliazed = true;
+            clock_gettime(CLOCK_REALTIME, &swordTime);
+        }
         glPushMatrix();
         glColor3f(100.0f, 100.0f, 100.0f);
-    // glTranslatef(30.0f, 0.0f, 0.0f)
-        //glTranslatef(g.ship.pos[0], g.ship.pos[1], g.ship.pos[2]);
         glTranslatef(g.player.pos[0]+ (xdir*25.0f), g.player.pos[1]+ (ydir*25.0f), g.player.pos[2]);
         glRotatef(g.player.angle, 0.0f, 0.0f, 1.0f);
         glBegin(GL_QUADS);
@@ -1130,8 +1144,25 @@ void render()
             glVertex2f( sword.width, -sword.height);
         glEnd();
         glPopMatrix();
+
+        double elapsed = timeDiff(&swordTime, &timeCurrent);
+        //double elapsed = timeDiff(&timeCurrent, &swordTime);
+        
+        
+        std::cout << elapsed << std::endl;
+       
+
+        if (elapsed > -0.07) {
+            gl.canPressSword = false;
+            glColor3f(100.0f, 100.0f, 100.0f);
+        } else {
+            gl.canPressSword = true;
+            timerInitiliazed = false;
+            gl.swordSlash = false;
+        }
     }
-	//-------------------------------------------------------------------------
+
+  	//-------------------------------------------------------------------------
 	//Draw the asteroids
 /*	{
 		Asteroid *a = g.ahead;

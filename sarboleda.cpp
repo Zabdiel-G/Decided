@@ -5,25 +5,9 @@
 #include "sarboleda.h"
 using namespace std;
 using namespace std::chrono;
-
-Timer::Timer() {
-    _start_time = _current_time = _last_delta_tick = system_clock::now();
-    _delta_time = duration<float>(0);
-}
-void Timer::reset() {
-    _start_time = system_clock::now();
-}
-float Timer::deltaTime() {
-    _current_time = system_clock::now();
-    _delta_time = _current_time - _last_delta_tick;
-    _last_delta_tick = _current_time;
-    return _delta_time.count();
-}
-float Timer::elapsedTime() {
-    _current_time = system_clock::now();
-    duration<float> elapse_time = _current_time - _start_time;
-    return elapse_time.count();
-}
+extern struct timespec timeStart, timeCurrent;
+extern double timeDiff(struct timespec *start, struct timespec *end);
+extern void timeCopy(struct timespec *dest, struct timespec *source);
 
 Sword::Sword() {
     damage = 1;
@@ -41,7 +25,7 @@ Player::Player() {
      pos[0] = 0.0f;
      pos[1] = 0.0f;
      pos[2] = 0.0f;
-     rad = ((angle+90)/360.0f) * PI * 2.0;
+    // rad = ((angle+90)/360.0f) * PI * 2.0;
      maxSpeed = 1;
      speed = 0;
      VecZero(dir);
@@ -52,33 +36,41 @@ Player::Player() {
      canDodge = true;
 }
 
+Ability abilities[3] = {{2, 0}, {1, 0}, {3, 0}};
 
-float dashSpeed = 20;
-void messageK(){
-
-    cout << "The letter K has been pressed" << endl;
+void updateAbilityCooldowns(Ability* abilityPtr, int numAbilities) 
+{
+    int x = 20000; 
+    if (serafinFeatureMode) {
+        x = 6250;
+    }
+    //double dummy = abilityPtr[0].timer; 
+    clock_gettime(CLOCK_REALTIME, &timeCurrent);
+    double elapsedTime = timeDiff(&timeStart, &timeCurrent);
+    timeCopy(&timeStart, &timeCurrent);
+    
+    for (int i = 0; i < numAbilities; i++) {
+        abilityPtr[i].timer -= abs(elapsedTime) * x;
+        if (abilityPtr[i].timer < 0.0) {
+            abilityPtr[i].timer = 0.0;
+        }
+    }
+   
 }
-
-/*void dodgeLeft(float angle, float velx, float vely) {
-    angle = 90;
-    velx = -20;
-    vely = 0;
-}*/
-
-void dodgeRight(float d[3]) {
-  d[0] = 270;
-  d[1] = dashSpeed;
-  d[2] = 0;
+void useAbility(Ability& ability) 
+{
+    //double dummy = ability.timer;
+    if (ability.timer == 0.0) {
+        ability.timer = ability.cooldown;
+      
+    }   
+    else {
+        if (serafinFeatureMode) {
+        double x = ability.cooldown - ability.timer;
+        std::cout << "Cooldown: " << x << endl;
+        }
+    }
 }
+UpdateAbilityCooldownsFunc updateFuncPtr = &updateAbilityCooldowns;
+UseAbilityFunc useFuncPtr = &useAbility;
 
-/*void dodgeUp(float angle, float velx, float vely) {
-    angle = 0;
-    velx = 0;
-    vely = dashSpeed;
-}
-
-void dodgeDown(float angle, float velx, float vely) {
-    angle = 180;
-    velx = 0;
-    vely = -dashSpeed;
-}*/

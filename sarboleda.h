@@ -14,17 +14,18 @@ typedef Flt Matrix[4][4];
 #define PI 3.141592653589793
 
 using namespace std::chrono;
-
-
-class Timer {
-public:
-    Timer();
-    void reset();
-    float deltaTime();
-    float elapsedTime();
-    system_clock::time_point _start_time, _current_time, _last_delta_tick;
-    duration<float> _delta_time;
+extern bool serafinFeatureMode;
+struct Ability {
+    double cooldown;
+    volatile double timer;
 };
+extern Ability abilities[3];
+void updateAbilityCooldowns(Ability[], int);
+void useAbility(Ability& ability);
+typedef void (*UpdateAbilityCooldownsFunc)(Ability*, int);
+typedef void (*UseAbilityFunc)(Ability&);
+extern UpdateAbilityCooldownsFunc updateFuncPtr;
+extern UseAbilityFunc useFuncPtr;
 
 class Sword {
 public:
@@ -42,7 +43,7 @@ public:
     Vec dir;
     Vec vel;
     Vec acc;
-    Flt rad;
+   // Flt rad;
     Flt xdir;
     Flt ydir;
     float maxSpeed;

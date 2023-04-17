@@ -941,7 +941,7 @@ void physics()
         gl.dodgePressing = true; 
         useAbility(abilities[0]);
 
-        if (gl.keys[XK_Right]) {
+        if (gl.keys[XK_Right] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
 
             useAbility(abilities[0]);    
             dashRight(g.player); 
@@ -958,12 +958,12 @@ void physics()
             useAbility(abilities[0]);
             dashRightDown(g.player);
         }
-        if (gl.keys[XK_Left]) {
+        if (gl.keys[XK_Left] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
             
             useAbility(abilities[0]);
             dashLeft(g.player);            
         }
-        if (gl.keys[XK_Up]) {
+        if (gl.keys[XK_Up] && !gl.keys[XK_Right] && !gl.keys[XK_Left]) {
            
             useAbility(abilities[0]); 
             dashUp(g.player);            
@@ -980,7 +980,7 @@ void physics()
             dashLeftDown(g.player);
         }
 
-        if (gl.keys[XK_Down] ) {
+        if (gl.keys[XK_Down] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
 
             useAbility(abilities[0]);
             dashDown(g.player);

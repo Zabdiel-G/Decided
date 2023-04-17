@@ -44,6 +44,7 @@ public:
     Vec vel;
     Vec acc;
    // Flt rad;
+    float dashSpeed;
     Flt xdir;
     Flt ydir;
     float maxSpeed;

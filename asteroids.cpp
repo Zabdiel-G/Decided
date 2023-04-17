@@ -870,56 +870,54 @@ void physics()
     //convert angle to a vector
     Flt xdir = cos(rad);
     Flt ydir = sin(rad);
-    Flt speed = 0;
-    //float MAX_SPEED = 1;
-   
+    extern void moveLeft(Player&, float,  float);
+    extern void moveRight(Player&, float,  float);
+    extern void moveUp(Player&, float,  float);
+    extern void moveDown(Player&, float,  float);
+    extern void moveLeftUp(Player&, float, float, float);
+    extern void moveLeftDown(Player&, float, float, float);
+    extern void moveRightUp(Player&, float, float, float);
+    extern void moveRightDown(Player&, float, float, float);
+    extern void dashRight(Player&);
+    extern void dashLeft(Player&);
+    extern void dashUp(Player&);
+    extern void dashDown(Player&);
+    extern void dashLeftDown(Player&);
+    extern void dashLeftUp(Player&);
+    extern void dashRightDown(Player&);
+    extern void dashRightUp(Player&);
+    
 	if (gl.keys[XK_Left]) {
-       
-       g.player.angle = 90;
-       g.player.vel[1] = 0;
-       g.player.vel[0] += xdir*0.50f; 
-       speed = g.player.vel[0];
-       if (speed < -MAX_SPEED) {
-           speed = -MAX_SPEED;
-           normalize2d(g.player.vel);
-           g.player.vel[0] *= abs(speed);
-       }
+       moveLeft(g.player, xdir,  MAX_SPEED);
+
     }
 	if (gl.keys[XK_Right]) {
-        
-        g.player.angle = 270;
-        g.player.vel[1] = 0;
-        g.player.vel[0] += xdir*0.50f;
-        speed = g.player.vel[0]*0.50;
-        if (speed > MAX_SPEED) {
-            speed = MAX_SPEED;
-            normalize2d(g.player.vel);
-            g.player.vel[0] *= abs(speed);
-        }
+        moveRight(g.player, xdir,  MAX_SPEED); 
+
     }
     if (gl.keys[XK_Up]) {
-        
-        g.player.angle = 0;
-        g.player.vel[0] = 0;
-        g.player.vel[1] += ydir*0.50f;
-        speed = g.player.vel[1]*0.50;
-        if (speed > MAX_SPEED * 1.5) {
-            speed = MAX_SPEED * 1.5;
-            normalize2d(g.player.vel);
-            g.player.vel[1] *= abs(speed);
-        }
+        moveUp(g.player, ydir,  MAX_SPEED);
+     
 	}
 
     if (gl.keys[XK_Down]) {
-        g.player.angle = 180;
-        g.player.vel[0] = 0;
-        g.player.vel[1] += ydir*0.50f;
-        speed = g.player.vel[1]*0.50;
-        if (speed < -MAX_SPEED * 1.5) {
-            speed = -MAX_SPEED * 1.5;
-            normalize2d(g.player.vel);
-            g.player.vel[1] *= abs(speed);
-        }
+        moveDown(g.player, ydir,  MAX_SPEED);
+    }
+
+    if (gl.keys[XK_Left] && gl.keys[XK_Up]) {
+        moveLeftUp(g.player, xdir, ydir, MAX_SPEED);
+    }
+
+    if (gl.keys[XK_Left] && gl.keys[XK_Down]) {
+        moveLeftDown(g.player, xdir, ydir, MAX_SPEED);
+    }
+
+    if (gl.keys[XK_Right] && gl.keys[XK_Up]) {
+        moveRightUp(g.player, xdir, ydir, MAX_SPEED);
+    }
+    
+    if (gl.keys[XK_Right] && gl.keys[XK_Down]) {
+        moveRightDown(g.player, xdir, ydir, MAX_SPEED);
     }
 
     //if nothing is happening then slow the ship down
@@ -944,29 +942,48 @@ void physics()
         useAbility(abilities[0]);
 
         if (gl.keys[XK_Right]) {
-               g.player.angle = 270;
-               g.player.vel[1] = 0;
-               g.player.vel[0] = dashSpeed;
 
-              // dodgeCdTracker(); 
+            useAbility(abilities[0]);    
+            dashRight(g.player); 
+        }
+        
+        if (gl.keys[XK_Right] && gl.keys[XK_Up]) {
+
+            useAbility(abilities[0]);
+            dashRightUp(g.player);
         }
 
+        if (gl.keys[XK_Right] && gl.keys[XK_Down]) {
+
+            useAbility(abilities[0]);
+            dashRightDown(g.player);
+        }
         if (gl.keys[XK_Left]) {
-                g.player.angle = 90;
-                g.player.vel[1] = 0;
-                g.player.vel[0] = -dashSpeed;
-                
+            
+            useAbility(abilities[0]);
+            dashLeft(g.player);            
         }
         if (gl.keys[XK_Up]) {
-                g.player.angle = 0;
-                g.player.vel[1] = dashSpeed;
-                g.player.vel[0] = 0;
-                
+           
+            useAbility(abilities[0]); 
+            dashUp(g.player);            
         }
+        if (gl.keys[XK_Left] && gl.keys[XK_Up]) {
+
+            useAbility(abilities[0]);
+            dashLeftUp(g.player);
+        }
+
+        if (gl.keys[XK_Left] && gl.keys[XK_Down]) {
+
+            useAbility(abilities[0]);
+            dashLeftDown(g.player);
+        }
+
         if (gl.keys[XK_Down] ) {
-                g.player.angle = 180;
-                g.player.vel[1] = -dashSpeed;
-                g.player.vel[0] = 0;
+
+            useAbility(abilities[0]);
+            dashDown(g.player);
         }
      }
     //std::cout << "Dodge" << abilities[0].timer << std::endl;
@@ -1088,9 +1105,12 @@ void render()
     //convert angle to a vector
     Flt xdir = cos(rad);
     Flt ydir = sin(rad);
+    Rect placeholder;
+    placeholder.bot = 0;
+    placeholder.left = 0;
+    placeholder.center = 0;
     
-
-	Rect r;
+  	Rect r;
 	glClear(GL_COLOR_BUFFER_BIT);
 	//
 	r.bot = gl.yres - 20;
@@ -1146,9 +1166,10 @@ void render()
         glPopMatrix();
 
         double elapsed = timeDiff(&swordTime, &timeCurrent);
-        //double elapsed = timeDiff(&timeCurrent, &swordTime);
-        
-        
+        int roundedDodge = std::round(elapsed);
+
+        ggprint8b(&placeholder, 16, 0x00ffff00, "Cooldown: %i", roundedDodge);
+
         std::cout << elapsed << std::endl;
        
 

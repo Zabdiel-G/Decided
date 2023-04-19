@@ -67,6 +67,7 @@ extern void messageK();
 extern void messageFire();
 extern void messageF();
 extern void obstRend();
+extern void physEnem();
 using namespace std::chrono;
 Sword sword;
 Player player;
@@ -405,6 +406,7 @@ int main()
 		render();
         if(gl.obstR){
             obstRend();
+            physEnem();
         }
 		x11.swapBuffers();
 	}

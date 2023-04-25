@@ -8,6 +8,9 @@
 #include <GL/glut.h>
 #include "EnemR.h"
 #include <cmath>
+
+using namespace std::chrono;
+
 extern struct timespec timeStart, timeCurrent;
 extern double timeDiff(struct timespec *start, struct timespec *end);
 extern void timeCopy(struct timespec *dest, struct timespec *source);
@@ -20,7 +23,7 @@ void messageZ()
     std::cout << "Zabs Feature mode has been Entered" << std::endl;
 }
 
-
+/*
 void obstRend()
 {
     int xres = 640;
@@ -43,34 +46,35 @@ void obstRend()
         glPopMatrix();
     }
 }
+*/
 
-/*void rangerRend()
+
+void rendEnemR(Asteroid* ahead)
 {
-    
-    glPushMatrix();
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glTranslatef(ranger.pos[0], ranger.pos[1], 0.0f);
-    glBegin(GL_QUADS);
-    glVertex2f(-ranger.w + 20, -ranger.h + 20); //bottom left
-    glVertex2f(-ranger.w + 20, ranger.h + 20);  //top left
-    glVertex2f( ranger.w + 20, ranger.h + 20);       //top right
-    glVertex2f( ranger.w + 20, -ranger.h + 20);      //bottom right
-    glEnd();
-    glPopMatrix();
-    
-    glClear(GL_COLOR_BUFFER_BIT);
-    ranger.drawEnemR()
-}*/
-
-void physEnem()
-{
-    clock_gettime(CLOCK_REALTIME, &timeCurrent);
-    double elapsedTime = timeDiff(&timeStart, &timeCurrent);
-    timeCopy(&timeStart, &timeCurrent);
-
-    EnemR ranger(20, 20, 0, 0, 100, 0);
-
-    ranger.drawEnemR();
-    ranger.updateEnemR(elapsedTime);
-
+    Asteroid *a = ahead;
+    while (a)
+    {
+        //Log("draw asteroid...\n");
+        glColor3fv(a->color);
+        glPushMatrix();
+        glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
+        glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
+        glBegin(GL_LINE_LOOP);
+        //Log("%i verts\n",a->nverts);
+        for (int j=0; j<a->nverts; j++)
+        {
+            glVertex2f(a->vert[j][0], a->vert[j][1]);
+        }
+        glEnd();
+        //glBegin(GL_LINES);
+        //  glVertex2f(0,   0);
+        //  glVertex2f(a->radius, 0);
+        //glEnd();
+        glPopMatrix();
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glBegin(GL_POINTS);
+        glVertex2f(a->pos[0], a->pos[1]);
+        glEnd();
+        a = a->next;
+    }
 }

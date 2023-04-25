@@ -2,9 +2,19 @@
 //Modified by: Zabdiel Garcia
 //
 
-#pragma once
 #include <cstring>
+#include <chrono>
 
+#pragma once
+
+typedef float Flt;
+typedef float Vec[3];
+typedef Flt Matrix[4][4];
+
+using namespace std::chrono;
+
+
+/*
 class EnemR
 {
     public:
@@ -62,4 +72,24 @@ class EnemR
 
 
 }obst[5];
+*/
 
+
+class Asteroid {
+public:
+    Vec pos;
+    Vec vel;
+    int nverts;
+    Flt radius;
+    Vec vert[8];
+    float angle;
+    float rotate;
+    float color[3];
+    struct Asteroid *prev;
+    struct Asteroid *next;
+public:
+    Asteroid() {
+        prev = NULL;
+        next = NULL;
+    }
+};

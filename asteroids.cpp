@@ -23,6 +23,7 @@
 #include <time.h>
 #include <chrono>
 #include "sarboleda.h"
+#include "EnemR.h"
 #define MAX_ASTEROIDS 10
 
 
@@ -66,8 +67,11 @@ extern void messageZ();
 extern void messageK();
 extern void messageFire();
 extern void messageF();
-extern void obstRend();
-extern void physEnem();
+//extern void obstRend();
+//extern void physEnem();
+extern void rendEnemR(Asteroid*);
+
+
 using namespace std::chrono;
 Sword sword;
 Player player;
@@ -134,24 +138,6 @@ public:
 	Bullet() { }
 };
 
-class Asteroid {
-public:
-	Vec pos;
-	Vec vel;
-	int nverts;
-	Flt radius;
-	Vec vert[8];
-	float angle;
-	float rotate;
-	float color[3];
-	struct Asteroid *prev;
-	struct Asteroid *next;
-public:
-	Asteroid() {
-		prev = NULL;
-		next = NULL;
-	}
-};
 
 class Game {
 public:
@@ -368,9 +354,12 @@ void render();
 void dodgeCdTracker();
 //extern void updateAbilityCooldowns(*Ability, int);
 //extern void useAbility(&Ability);
+
 //==========================================================================
 // M A I N
 //==========================================================================
+
+
 int main()
 {
     g.player.pos[0] = (Flt)(gl.xres/2);
@@ -405,8 +394,7 @@ int main()
 		}
 		render();
         if(gl.obstR){
-            obstRend();
-            physEnem();
+            rendEnemR(g.ahead);
         }
 		x11.swapBuffers();
 	}
@@ -888,6 +876,7 @@ void physics()
     extern void dashLeftUp(Player&);
     extern void dashRightDown(Player&);
     extern void dashRightUp(Player&);
+
     
 	if (gl.keys[XK_Left]) {
        moveLeft(g.player, xdir,  MAX_SPEED);
@@ -1186,34 +1175,6 @@ void render()
     }
 
   	//-------------------------------------------------------------------------
-	//Draw the asteroids
-/*	{
-		Asteroid *a = g.ahead;
-		while (a) {
-			//Log("draw asteroid...\n");
-			glColor3fv(a->color);
-			glPushMatrix();
-			glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
-			glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
-			glBegin(GL_LINE_LOOP);
-			//Log("%i verts\n",a->nverts);
-			for (int j=0; j<a->nverts; j++) {
-				glVertex2f(a->vert[j][0], a->vert[j][1]);
-			}
-			glEnd();
-			//glBegin(GL_LINES);
-			//	glVertex2f(0,   0);
-			//	glVertex2f(a->radius, 0);
-			//glEnd();
-			glPopMatrix();
-			glColor3f(1.0f, 0.0f, 0.0f);
-			glBegin(GL_POINTS);
-			glVertex2f(a->pos[0], a->pos[1]);
-			glEnd();
-			a = a->next;
-		}
-	}*/
-	//-------------------------------------------------------------------------
 	//Draw the bullets
 	for (int i=0; i<g.nbullets; i++) {
 		Bullet *b = &g.barr[i];

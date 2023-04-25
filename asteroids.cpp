@@ -1057,10 +1057,10 @@ void playerPhysics()
 void render()
 {
     //draw thrust
-    Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
+    //Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
     //convert angle to a vector
-    Flt xdir = cos(rad);
-    Flt ydir = sin(rad);
+    //Flt xdir = cos(rad);
+    //Flt ydir = sin(rad);
     Rect placeholder;
     placeholder.bot = 0;
     placeholder.left = 0;
@@ -1115,7 +1115,7 @@ void render()
         }
         glPushMatrix();
         glColor3f(100.0f, 100.0f, 100.0f);
-        glTranslatef(g.player.pos[0]+ (xdir*25.0f), g.player.pos[1]+ (ydir*25.0f), g.player.pos[2]);
+        glTranslatef(g.player.pos[0]+ (g.player.xdir*25.0f), g.player.pos[1]+ (g.player.ydir*25.0f), g.player.pos[2]);
         glRotatef(g.player.angle, 0.0f, 0.0f, 1.0f);
         glBegin(GL_QUADS);
             glVertex2f(-sword.width, -sword.height);
@@ -1128,12 +1128,12 @@ void render()
         double elapsed = timeDiff(&swordTime, &timeCurrent);
         int roundedDodge = std::round(elapsed);
 
-        ggprint8b(&placeholder, 16, 0x00ffff00, "Cooldown: %i", roundedDodge);
+        ggprint8b(&placeholder, 16, 0xff000000, "Cooldown: %i", roundedDodge);
 
-        std::cout << elapsed << std::endl;
+       // std::cout << elapsed << std::endl;
        
 
-        if (elapsed > -0.07) {
+        if (elapsed > -0.04) {
             gl.canPressSword = false;
             glColor3f(100.0f, 100.0f, 100.0f);
         } else {

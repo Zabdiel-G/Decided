@@ -25,8 +25,8 @@ void normalized2d(Vec v)
 ///////////////////////////////////
 Sword::Sword() {
     damage = 1;
-    width = 40.0f;
-    height = 20.0f;
+    width = 80.0f;
+    height = 60.0f;
     pos[0] = 0.0f;
     pos[1] = 0.0f;
     color[0] = 100.0f;

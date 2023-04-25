@@ -49,12 +49,15 @@ Player::Player() {
      angle = 0.0;
      color[0] = color[1] = color[2] = 1.0;
      canDodge = true;
+     timestop = false;
 }
 
-Ability abilities[3] = {{2, 0}, {1, 0}, {3, 0}};
+//Ability Logic. Keeping track of cooldown and duration of every ability.//
+Ability abilities[3] = {{2, 1, 0, 0}, {1, .5, 0, 0}, {7, 2, 0, 0}};
 
 void updateAbilityCooldowns(Ability* abilityPtr, int numAbilities) 
 {
+    //x is a times constant to make one second more accurate to real time
     int x = 20000; 
     if (serafinFeatureMode) {
         x = 6250;
@@ -70,6 +73,13 @@ void updateAbilityCooldowns(Ability* abilityPtr, int numAbilities)
             abilityPtr[i].timer = 0.0;
         }
     }
+    for (int i = 0; i < numAbilities; i++) {
+        abilityPtr[i].durationTimer -= abs(elapsedTime) * x;
+        if (abilityPtr[i].durationTimer < 0.0) {
+            abilityPtr[i].durationTimer = 0.0;
+        }
+    }
+
    
 }
 void useAbility(Ability& ability) 
@@ -78,6 +88,9 @@ void useAbility(Ability& ability)
     if (ability.timer == 0.0) {
         ability.timer = ability.cooldown;
       
+    }
+     if (ability.durationTimer == 0.0) {
+        ability.durationTimer = ability.duration;
     }   
     else {
         if (serafinFeatureMode) {
@@ -90,6 +103,8 @@ void useAbility(Ability& ability)
 UpdateAbilityCooldownsFunc updateFuncPtr = &updateAbilityCooldowns;
 UseAbilityFunc useFuncPtr = &useAbility;
 
+
+//Movement of the player
 void moveLeft(Player& player, float xdir, float MAX_SPEED) 
 {
     player.angle = 90;

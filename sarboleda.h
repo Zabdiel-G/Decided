@@ -17,7 +17,9 @@ using namespace std::chrono;
 extern bool serafinFeatureMode;
 struct Ability {
     double cooldown;
+    double duration;
     volatile double timer;
+    volatile double durationTimer;
 };
 extern Ability abilities[3];
 void updateAbilityCooldowns(Ability[], int);
@@ -52,5 +54,6 @@ public:
     float angle;
     float color[3];
     bool canDodge;
+    bool timestop;
     Player();
  };

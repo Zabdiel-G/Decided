@@ -353,6 +353,7 @@ void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
 void physics();
 void render();
+void playerPhysics();
 //bool canDodge();
 void dodgeCdTracker();
 //extern void updateAbilityCooldowns(*Ability, int);
@@ -392,6 +393,7 @@ int main()
             //std::cout << count << std::endl;
             //count++;
             updateAbilityCooldowns(abilities, 3);
+            playerPhysics();
 			physics();
 			physicsCountdown -= physicsRate;
 		}
@@ -698,171 +700,170 @@ void buildAsteroidFragment(Asteroid *ta, Asteroid *a)
 	ta->vel[1] = a->vel[1] + (rnd()*2.0-1.0);
 	//std::cout << "frag" << std::endl;
 }
-
 void physics()
 {
-	Flt d0,d1,dist;
-    float MAX_SPEED = 1;
-	//Update ship position
-	g.player.pos[0] += g.player.vel[0];
-	g.player.pos[1] += g.player.vel[1];
-	//Check for collision with window edges
-	if (g.player.pos[0] < 0.0) {
-        if (g.player.vel[0] < MAX_SPEED ) {
+  if(g.player.timestop == false) {
+    Flt d0,d1,dist;
+    //
+    //
+    //Update bullet positions
+    //if (!serafinFeatureMode) {
+    struct timespec bt;
+    clock_gettime(CLOCK_REALTIME, &bt);
+    int i = 0;
+    while (i < g.nbullets) {
+        Bullet *b = &g.barr[i];
+        //How long has bullet been alive?
+        double ts = timeDiff(&b->time, &bt);
+        if (ts > 5.0) {
+            //time to delete the bullet.
+            memcpy(&g.barr[i], &g.barr[g.nbullets-1],
+                sizeof(Bullet));
+            g.nbullets--;
+            //do not increment i.
+            continue;
+        }
+        //move the bullet
+        b->pos[0] += b->vel[0];
+        b->pos[1] += b->vel[1];
+        //Check for collision with window edges
+        if (b->pos[0] < 0.0) {
+            b->pos[0] += (float)gl.xres;
+        }
+        else if (b->pos[0] > (float)gl.xres) {
+            b->pos[0] -= (float)gl.xres;
+        }
+        else if (b->pos[1] < 0.0) {
+            b->pos[1] += (float)gl.yres;
+        }
+        else if (b->pos[1] > (float)gl.yres) {
+            b->pos[1] -= (float)gl.yres;
+        }
+        ++i;
+    }
+     //Update asteroid positions
+    Asteroid *a = g.ahead;
+    while (a) {
+        a->pos[0] += a->vel[0];
+        a->pos[1] += a->vel[1];
+        //Check for collision with window edges
+        if (a->pos[0] < -100.0) {
+            a->pos[0] += (float)gl.xres+200;
+        }
+        else if (a->pos[0] > (float)gl.xres+100) {
+            a->pos[0] -= (float)gl.xres+200;
+        }
+        else if (a->pos[1] < -100.0) {
+            a->pos[1] += (float)gl.yres+200;
+        }
+        else if (a->pos[1] > (float)gl.yres+100) {
+            a->pos[1] -= (float)gl.yres+200;
+        }
+        a->angle += a->rotate;
+        a = a->next;
+    }
+    //
+    //Asteroid collision with bullets?
+    //If collision detected:
+    //     1. delete the bullet
+    //     2. break the asteroid into pieces
+    //        if asteroid small, delete it
+    a = g.ahead;
+    while (a) {
+        //is there a bullet within its radius?
+        int i=0;
+        while (i < g.nbullets) {
+            Bullet *b = &g.barr[i];
+            d0 = b->pos[0] - a->pos[0];
+            d1 = b->pos[1] - a->pos[1];
+            dist = (d0*d0 + d1*d1);
+            if (dist < (a->radius*a->radius)) {
+                //std::cout << "asteroid hit." << std::endl;
+                //this asteroid is hit.
+                if (a->radius > MINIMUM_ASTEROID_SIZE) {
+                    //break it into pieces.
+                    Asteroid *ta = a;
+                    buildAsteroidFragment(ta, a);
+                    int r = rand()%10+5;
+                    for (int k=0; k<r; k++) {
+                         //get the next asteroid position in the array
+                        Asteroid *ta = new Asteroid;
+                        buildAsteroidFragment(ta, a);
+                        //add to front of asteroid linked list
+                        ta->next = g.ahead;
+                        if (g.ahead != NULL)
+                            g.ahead->prev = ta;
+                        g.ahead = ta;
+                        g.nasteroids++;
+                    }
+                } else {
+                    a->color[0] = 1.0;
+                    a->color[1] = 0.1;
+                    a->color[2] = 0.1;
+                    //asteroid is too small to break up
+                    //delete the asteroid and bullet
+                    Asteroid *savea = a->next;
+                    deleteAsteroid(&g, a);
+                    a = savea;
+                    g.nasteroids--;
+                }
+                //delete the bullet...
+                memcpy(&g.barr[i], &g.barr[g.nbullets-1], sizeof(Bullet));
+                g.nbullets--;
+                if (a == NULL)
+                    break;
+            }
+            i++;
+        }
+        if (a == NULL)
+            break;
+        a = a->next;
+    }
+  }
+    //}
+}
+void playerPhysics()
+{
+
+    //Update ship position
+    g.player.pos[0] += g.player.vel[0];
+    g.player.pos[1] += g.player.vel[1];
+    //Check for collision with window edges
+    if (g.player.pos[0] < 0.0) {
+        if (g.player.vel[0] < player.maxSpeed ) {
             g.player.pos[0] = 0.0;
             g.player.vel[0] = -g.player.vel[0]*.01;
         }
         else {
-		    g.player.pos[0] = 0.0;
+            g.player.pos[0] = 0.0;
             g.player.vel[0] = -g.player.vel[0]*0.00005;
         }
 
-	}
-	else if (g.player.pos[0] > (float)gl.xres) {
-		//g.ship.pos[0] -= (float)gl.xres;
+    }
+    else if (g.player.pos[0] > (float)gl.xres) {
+        //g.ship.pos[0] -= (float)gl.xres;
         g.player.pos[0] = (float)gl.xres;
-        g.player.vel[0] = -g.player.vel[0]*0.00005; 
-	}
-	else if (g.player.pos[1] < 0.0) {
+        g.player.vel[0] = -g.player.vel[0]*0.00005;
+    }
+    else if (g.player.pos[1] < 0.0) {
         g.player.pos[1] = 0.0;
         g.player.vel[1] = -g.player.vel[1]*0.00005;
-	}
-	else if (g.player.pos[1] > (float)gl.yres) {
+    }
+    else if (g.player.pos[1] > (float)gl.yres) {
         g.player.pos[1] = (float)gl.yres;
         g.player.vel[1] = -g.player.vel[1] *0.00005;
-	}
-	//
-	//
-	//Update bullet positions
-    if (!serafinFeatureMode) {
-	struct timespec bt;
-	clock_gettime(CLOCK_REALTIME, &bt);
-	int i = 0;
-	while (i < g.nbullets) {
-		Bullet *b = &g.barr[i];
-		//How long has bullet been alive?
-		double ts = timeDiff(&b->time, &bt);
-		if (ts > 2.5) {
-			//time to delete the bullet.
-			memcpy(&g.barr[i], &g.barr[g.nbullets-1],
-				sizeof(Bullet));
-			g.nbullets--;
-			//do not increment i.
-			continue;
-		}
-		//move the bullet
-		b->pos[0] += b->vel[0];
-		b->pos[1] += b->vel[1];
-		//Check for collision with window edges
-		if (b->pos[0] < 0.0) {
-			b->pos[0] += (float)gl.xres;
-		}
-		else if (b->pos[0] > (float)gl.xres) {
-			b->pos[0] -= (float)gl.xres;
-		}
-		else if (b->pos[1] < 0.0) {
-			b->pos[1] += (float)gl.yres;
-		}
-		else if (b->pos[1] > (float)gl.yres) {
-			b->pos[1] -= (float)gl.yres;
-		}
-		++i;
-	}
-
-	//
-	//Update asteroid positions
-	Asteroid *a = g.ahead;
-	while (a) {
-		a->pos[0] += a->vel[0];
-		a->pos[1] += a->vel[1];
-		//Check for collision with window edges
-		if (a->pos[0] < -100.0) {
-			a->pos[0] += (float)gl.xres+200;
-		}
-		else if (a->pos[0] > (float)gl.xres+100) {
-			a->pos[0] -= (float)gl.xres+200;
-		}
-		else if (a->pos[1] < -100.0) {
-			a->pos[1] += (float)gl.yres+200;
-		}
-		else if (a->pos[1] > (float)gl.yres+100) {
-			a->pos[1] -= (float)gl.yres+200;
-		}
-		a->angle += a->rotate;
-		a = a->next;
-	}
-	//
-	//Asteroid collision with bullets?
-	//If collision detected:
-	//     1. delete the bullet
-	//     2. break the asteroid into pieces
-	//        if asteroid small, delete it
-	a = g.ahead;
-	while (a) {
-		//is there a bullet within its radius?
-		int i=0;
-		while (i < g.nbullets) {
-			Bullet *b = &g.barr[i];
-			d0 = b->pos[0] - a->pos[0];
-			d1 = b->pos[1] - a->pos[1];
-			dist = (d0*d0 + d1*d1);
-			if (dist < (a->radius*a->radius)) {
-				//std::cout << "asteroid hit." << std::endl;
-				//this asteroid is hit.
-				if (a->radius > MINIMUM_ASTEROID_SIZE) {
-					//break it into pieces.
-					Asteroid *ta = a;
-					buildAsteroidFragment(ta, a);
-					int r = rand()%10+5;
-					for (int k=0; k<r; k++) {
-						//get the next asteroid position in the array
-						Asteroid *ta = new Asteroid;
-						buildAsteroidFragment(ta, a);
-						//add to front of asteroid linked list
-						ta->next = g.ahead;
-						if (g.ahead != NULL)
-							g.ahead->prev = ta;
-						g.ahead = ta;
-						g.nasteroids++;
-					}
-				} else {
-					a->color[0] = 1.0;
-					a->color[1] = 0.1;
-					a->color[2] = 0.1;
-					//asteroid is too small to break up
-					//delete the asteroid and bullet
-					Asteroid *savea = a->next;
-					deleteAsteroid(&g, a);
-					a = savea;
-					g.nasteroids--;
-				}
-				//delete the bullet...
-				memcpy(&g.barr[i], &g.barr[g.nbullets-1], sizeof(Bullet));
-				g.nbullets--;
-				if (a == NULL)
-					break;
-			}
-			i++;
-		}
-		if (a == NULL)
-			break;
-		a = a->next;
-	}
     }
 
-    //sword collision with bullet
-    
-
-    
-	//---------------------------------------------------
-	//check keys pressed now
+    //---------------------------------------------------
+    //check keys pressed now
     //movement change by Serafin.
-    //Fix: changing the asteroid-style movement into a 
-    //more traditional top-down 
+    //Fix: changing the asteroid-style movement into a
+    //more traditional top-down
     Flt rad = ((g.player.angle+90.0) / 360.0f) * PI * 2.0;
     //convert angle to a vector
     Flt xdir = cos(rad);
     Flt ydir = sin(rad);
+    float MAX_SPEED = 1;
     extern void moveLeft(Player&, float,  float);
     extern void moveRight(Player&, float,  float);
     extern void moveUp(Player&, float,  float);
@@ -880,19 +881,18 @@ void physics()
     extern void dashRightDown(Player&);
     extern void dashRightUp(Player&);
 
-    
-	if (gl.keys[XK_Left]) {
+    if (gl.keys[XK_Left]) {
        moveLeft(g.player, xdir,  MAX_SPEED);
 
     }
-	if (gl.keys[XK_Right]) {
-        moveRight(g.player, xdir,  MAX_SPEED); 
+    if (gl.keys[XK_Right]) {
+        moveRight(g.player, xdir,  MAX_SPEED);
 
     }
     if (gl.keys[XK_Up]) {
         moveUp(g.player, ydir,  MAX_SPEED);
-     
-	}
+
+    }
 
     if (gl.keys[XK_Down]) {
         moveDown(g.player, ydir,  MAX_SPEED);
@@ -906,10 +906,10 @@ void physics()
         moveLeftDown(g.player, xdir, ydir, MAX_SPEED);
     }
 
-    if (gl.keys[XK_Right] && gl.keys[XK_Up]) {
+     if (gl.keys[XK_Right] && gl.keys[XK_Up]) {
         moveRightUp(g.player, xdir, ydir, MAX_SPEED);
     }
-    
+
     if (gl.keys[XK_Right] && gl.keys[XK_Down]) {
         moveRightDown(g.player, xdir, ydir, MAX_SPEED);
     }
@@ -924,23 +924,31 @@ void physics()
                 g.player.vel[0] *= .5;
         }
     }
-    extern void dodgeRight(float p[3]);
-    float dashSpeed = 100;
+    if(abilities[2].durationTimer == 0) {
+        g.player.timestop = false;
+    }
+
+    if (gl.keys[XK_q] && abilities[2].timer == 0) {
+        useAbility(abilities[2]);
+        g.player.timestop = true;
+
+    }
+
     if (!gl.keys[XK_Shift_L]) {
         gl.dodgePressing = false;
     }
     if (gl.keys[XK_Shift_L] && gl.dodgePressing == false
             && abilities[0].timer == 0) {
 
-        gl.dodgePressing = true; 
+        gl.dodgePressing = true;
         useAbility(abilities[0]);
 
         if (gl.keys[XK_Right] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
 
-            useAbility(abilities[0]);    
-            dashRight(g.player); 
+            useAbility(abilities[0]);
+             dashRight(g.player);
         }
-        
+
         if (gl.keys[XK_Right] && gl.keys[XK_Up]) {
 
             useAbility(abilities[0]);
@@ -953,14 +961,14 @@ void physics()
             dashRightDown(g.player);
         }
         if (gl.keys[XK_Left] && !gl.keys[XK_Up] && !gl.keys[XK_Down]) {
-            
+
             useAbility(abilities[0]);
-            dashLeft(g.player);            
+            dashLeft(g.player);
         }
         if (gl.keys[XK_Up] && !gl.keys[XK_Right] && !gl.keys[XK_Left]) {
-           
-            useAbility(abilities[0]); 
-            dashUp(g.player);            
+
+            useAbility(abilities[0]);
+            dashUp(g.player);
         }
         if (gl.keys[XK_Left] && gl.keys[XK_Up]) {
 
@@ -980,58 +988,11 @@ void physics()
             dashDown(g.player);
         }
      }
-    //std::cout << "Dodge" << abilities[0].timer << std::endl;
-
     if (serafinFeatureMode) {
         std::cout << "Dodge" <<  abilities[0].timer << std::endl;
         std::cout << "Attack" <<  abilities[1].timer << std::endl;
         std::cout << "Timestop" <<  abilities[2].timer << std::endl;
-
-        if (gl.keys[XK_Shift_L] && g.player.canDodge == true) {
-            if (gl.keys[XK_Right]) {
-                g.player.angle = 270;
-                g.player.vel[1] = 0;
-                g.player.vel[0] = dashSpeed; 
-                g.player.color[0] = 100.0f;
-                g.player.color[1] = 100.0f;
-                g.player.color[2] = 100.0f;
-            }
-
-            if (gl.keys[XK_Left]) {
-                g.player.angle = 90;
-                g.player.vel[1] = 0;
-                g.player.vel[0] = -dashSpeed;
-                g.player.color[0] = 150.0f;
-                g.player.color[1] = 150.0f;
-                g.player.color[2] = 150.0f;
-
-            }
-            if (gl.keys[XK_Up]) {
-                g.player.angle = 0;
-                g.player.vel[1] = dashSpeed;
-                g.player.vel[0] = 0;
-                g.player.color[0] = 50.0f;
-                g.player.color[1] = 50.0f;
-                g.player.color[2] = 50.0f;
-
-            }
-            if (gl.keys[XK_Down] ) {
-                g.player.angle = 180;
-                g.player.vel[1] = -dashSpeed;
-                g.player.vel[0] = 0;
-                g.player.color[0] = 200.0f;
-                g.player.color[1] = 200.0f;
-                g.player.color[1] = 200.0f;
-
-
-            }
-        }
-
-
     }
-    
-    
-
     if (!gl.keys[XK_x]) {
         gl.swordSlash = false;
         gl.canPressSword = true;
@@ -1046,51 +1007,52 @@ void physics()
     else if (!gl.keys[XK_x]) {
         gl.keyPressed  = false;
     }
- 
-	if (gl.keys[XK_space]) {
-		//a little time between each bullet
-		struct timespec bt;
+
+    if (gl.keys[XK_space]) {
+        //a little time between each bullet
+        struct timespec bt;
         //messageFire();
-		clock_gettime(CLOCK_REALTIME, &bt);
-		double ts = timeDiff(&g.bulletTimer, &bt);
-		if (ts > 0.1) {
-			timeCopy(&g.bulletTimer, &bt);
-			if (g.nbullets < MAX_BULLETS) {
-				//shoot a bullet...
-				//Bullet *b = new Bullet;
-				Bullet *b = &g.barr[g.nbullets];
-				timeCopy(&b->time, &bt);
-                
-				b->pos[0] = g.ship.pos[0];
-				b->pos[1] = g.ship.pos[1];
-				b->vel[0] = g.ship.vel[0];
-				b->vel[1] = g.ship.vel[1];
-				//convert ship angle to radians
-				Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
-				//convert angle to a vector
-				Flt xdir = cos(rad);
-				Flt ydir = sin(rad);
-				b->pos[0] += xdir*20.0f;
-				b->pos[1] += ydir*20.0f;
-				b->vel[0] += xdir*6.0f + rnd()*0.1;
-				b->vel[1] += ydir*6.0f + rnd()*0.1;
-				b->color[0] = 1.0f;
-				b->color[1] = 1.0f;
-				b->color[2] = 1.0f;
-				g.nbullets++;
-			}
-		}
-	}
+        clock_gettime(CLOCK_REALTIME, &bt);
+        double ts = timeDiff(&g.bulletTimer, &bt);
+        if (ts > 0.1) {
+            timeCopy(&g.bulletTimer, &bt);
+            if (g.nbullets < MAX_BULLETS) {
+                //shoot a bullet...
+                //Bullet *b = new Bullet;
+                Bullet *b = &g.barr[g.nbullets];
+                timeCopy(&b->time, &bt);
+
+                b->pos[0] = g.ship.pos[0];
+                b->pos[1] = g.ship.pos[1];
+                b->vel[0] = g.ship.vel[0];
+                b->vel[1] = g.ship.vel[1];
+                //convert ship angle to radians
+                Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
+                //convert angle to a vector
+                Flt xdir = cos(rad);
+                Flt ydir = sin(rad);
+                b->pos[0] += xdir*20.0f;
+                b->pos[1] += ydir*20.0f;
+                b->vel[0] += xdir*6.0f + rnd()*0.1;
+                b->vel[1] += ydir*6.0f + rnd()*0.1;
+                b->color[0] = 1.0f;
+                b->color[1] = 1.0f;
+                b->color[2] = 1.0f;
+                g.nbullets++;
+            }
+        }
+    }
     if (g.mouseThrustOn) {
-		//should thrust be turned off
-		struct timespec mtt;
-		clock_gettime(CLOCK_REALTIME, &mtt);
-		double tdif = timeDiff(&mtt, &g.mouseThrustTimer);
-		//std::cout << "tdif: " << tdif << std::endl;
-		if (tdif < -0.3)
-			g.mouseThrustOn = false;
-	}
+        //should thrust be turned off
+        struct timespec mtt;
+        clock_gettime(CLOCK_REALTIME, &mtt);
+        double tdif = timeDiff(&mtt, &g.mouseThrustTimer);
+        //std::cout << "tdif: " << tdif << std::endl;
+        if (tdif < -0.3)
+            g.mouseThrustOn = false;
+    }
 }
+
 
 void render()
 {
@@ -1114,7 +1076,11 @@ void render()
 	ggprint8b(&r, 16, 0x00ffff00, "n bullets: %i", g.nbullets);
 	ggprint8b(&r, 16, 0x00ffff00, "n asteroids: %i", g.nasteroids);
     int roundedDodge = std::round(abilities[0].timer);
+    int roundedTimestop = std::round(abilities[2].timer);
+    int roundedTimestopDur = std::round(abilities[2].durationTimer);
     ggprint8b(&r, 16, 0x00ffff00, "Cooldown: %i", roundedDodge);
+    ggprint8b(&r, 16, 0x00ffff00, "Timestop Cooldown: %i", roundedTimestop);
+    ggprint8b(&r, 16, 0x00ffff00, "Timestop Duration: %i", roundedTimestopDur);
     if (serafinFeatureMode) {
        ggprint8b(&r, 16, 0x00ffff00, "Serafin's Feature Mode");
 

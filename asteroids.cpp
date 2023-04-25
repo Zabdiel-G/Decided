@@ -1173,6 +1173,25 @@ void render()
             gl.swordSlash = false;
         }
     }
+// Check if the "f" key is pressed, and draw circles if it is
+    if (gl.keys[XK_f]) {
+        glColor3f(0.5f, 0.5f, 1.0f);
+        glPushMatrix();
+        glTranslatef(g.player.pos[0], g.player.pos[1], g.player.pos[2]);
+        for (int i = 0; i < 10; i++) {
+            glTranslatef(xdir * 5.0f, ydir * 5.0f, 0.0f);
+            glBegin(GL_TRIANGLE_FAN);
+            glVertex2f(0.0f, 0.0f);
+            for (int j = 0; j <= 20; j++) {
+                float angle = j * 2.0f * PI / 20.0f;
+                float x = cos(angle) * 10.0f;
+                float y = sin(angle) * 10.0f;
+                glVertex2f(x, y);
+            }
+            glEnd();
+        }
+        glPopMatrix();
+    }
 
   	//-------------------------------------------------------------------------
 	//Draw the bullets

@@ -24,6 +24,7 @@
 #include <chrono>
 #include "sarboleda.h"
 #include "EnemR.h"
+#include "Global.h"
 #define MAX_ASTEROIDS 10
 
 
@@ -78,6 +79,7 @@ Player player;
 extern struct Ability abilities[3];
 bool serafinFeatureMode = false;
 
+/*
 class Global {
 public:
 	int xres, yres;
@@ -100,7 +102,7 @@ public:
         keyPressed = false;
 	}
 } gl;
-
+*/
 
 class Ship {
 public:
@@ -165,7 +167,7 @@ public:
 		//build 10 asteroids...
 		for (int j=0; j<10; j++) {
 			Asteroid *a = new Asteroid;
-			a->nverts = 8;
+			a->nverts = 4;
 			a->radius = rnd()*80.0 + 40.0;
 			Flt r2 = a->radius / 2.0;
 			Flt angle = 0.0f;
@@ -193,7 +195,8 @@ public:
 			ahead = a;
 			++nasteroids;
 		}
-		clock_gettime(CLOCK_REALTIME, &bulletTimer);
+
+	clock_gettime(CLOCK_REALTIME, &bulletTimer);
         clock_gettime(CLOCK_REALTIME, &dodgeTimer);
         clock_gettime(CLOCK_REALTIME, &slashTimer);
 
@@ -1172,25 +1175,6 @@ void render()
             timerInitiliazed = false;
             gl.swordSlash = false;
         }
-    }
-// Check if the "f" key is pressed, and draw circles if it is
-    if (gl.keys[XK_f]) {
-        glColor3f(0.5f, 0.5f, 1.0f);
-        glPushMatrix();
-        glTranslatef(g.player.pos[0], g.player.pos[1], g.player.pos[2]);
-        for (int i = 0; i < 10; i++) {
-            glTranslatef(xdir * 5.0f, ydir * 5.0f, 0.0f);
-            glBegin(GL_TRIANGLE_FAN);
-            glVertex2f(0.0f, 0.0f);
-            for (int j = 0; j <= 20; j++) {
-                float angle = j * 2.0f * PI / 20.0f;
-                float x = cos(angle) * 10.0f;
-                float y = sin(angle) * 10.0f;
-                glVertex2f(x, y);
-            }
-            glEnd();
-        }
-        glPopMatrix();
     }
 
   	//-------------------------------------------------------------------------

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <GL/glut.h>
 #include "EnemR.h"
+//#include "Global.h"
 #include <cmath>
 
 using namespace std::chrono;
@@ -23,21 +24,24 @@ void messageZ()
     std::cout << "Zabs Feature mode has been Entered" << std::endl;
 }
 
-void rendEnemR(Asteroid* ahead)
+//RENDER FOR THE RANGED ENEMY..................................................
+void rendEnemR(EnemR* ahead)
 {
-    Asteroid *a = ahead;
+    EnemR *a = ahead;
     while (a)
     {
         //Log("draw asteroid...\n");
         //glColor3fv(a->color);
         glPushMatrix();
-	glColor3f(1.0f, 0.0f, 0.0f);
+    	glColor3f(0.0f, 1.0f, 0.0f);
         glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
         glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
         //glBegin(GL_LINE_LOOP);
-	glBegin(GL_QUADS);
+	    glBegin(GL_QUADS);
         //Log("%i verts\n",a->nverts);
-        for (int j=0; j<a->nverts; j++)
+
+        //for (int j=0; j<a->nverts; j++)
+        for (int j=0; j<4; j++)
         {
             glVertex2f(a->vert[j][0], a->vert[j][1]);
         }

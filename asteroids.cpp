@@ -49,7 +49,7 @@ const float gravity = -0.2f;
 #define PI 3.141592653589793
 #define ALPHA 1
 const int MAX_BULLETS = 11;
-const Flt MINIMUM_ASTEROID_SIZE = 60.0;
+const Flt MINIMUM_ASTEROID_SIZE = 15.0;
 
 //-----------------------------------------------------------------------------
 //Setup timers
@@ -68,10 +68,8 @@ extern void messageZ();
 extern void messageK();
 extern void messageFire();
 extern void messageF();
-//extern void obstRend();
-//extern void physEnem();
-extern void rendEnemR(Asteroid*);
-
+extern void rendEnemR(EnemR*);
+//extern void makeEnem(int nasteroids);
 
 using namespace std::chrono;
 Sword sword;
@@ -79,30 +77,6 @@ Player player;
 extern struct Ability abilities[3];
 bool serafinFeatureMode = false;
 
-/*
-class Global {
-public:
-	int xres, yres;
-	char keys[65536];
-   // bool serafinFeature;
-    bool obstR;
-    bool dodgePressing;
-    bool swordSlash;
-    bool canPressSword;
-    bool keyPressed;
-	Global() {
-		xres = 640;
-		yres = 480;
-		memset(keys, 0, 65536);
-        //serafinFeature = false;
-        obstR = false;
-        dodgePressing = false;
-        swordSlash = false;
-        canPressSword = true;
-        keyPressed = false;
-	}
-} gl;
-*/
 
 class Ship {
 public:
@@ -145,9 +119,9 @@ class Game {
 public:
 	Ship ship;
     Player player;
-	Asteroid *ahead;
+	EnemR *ahead;
 	Bullet *barr;
-	Asteroid *aarr;
+	EnemR *aarr;
     int width;
     int height;
 	int nasteroids;
@@ -166,19 +140,24 @@ public:
 		mouseThrustOn = false;
 		//build 10 asteroids...
 		for (int j=0; j<10; j++) {
-			Asteroid *a = new Asteroid;
+			EnemR *a = new EnemR;
 			a->nverts = 4;
-			a->radius = rnd()*80.0 + 40.0;
+			//a->radius = rnd()*80.0 + 40.0;
+			a->radius = 20.0;
 			Flt r2 = a->radius / 2.0;
 			Flt angle = 0.0f;
 			Flt inc = (PI * 2.0) / (Flt)a->nverts;
 			for (int i=0; i<a->nverts; i++) {
-				a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
-				a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
+				//a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
+				//a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
+				a->vert[i][0] = sin(angle) * r2 * 2;
+				a->vert[i][1] = cos(angle) * r2 * 2;
 				angle += inc;
 			}
 			a->pos[0] = (Flt)(rand() % gl.xres);
 			a->pos[1] = (Flt)(rand() % gl.yres);
+			//a->pos[0] = (Flt)(gl.xres);
+			//a->pos[1] = (Flt)(gl.yres);
 			a->pos[2] = 0.0f;
 			a->angle = 0.0;
 			a->rotate = rnd() * 4.0 - 2.0;
@@ -196,7 +175,7 @@ public:
 			++nasteroids;
 		}
 
-	clock_gettime(CLOCK_REALTIME, &bulletTimer);
+	    clock_gettime(CLOCK_REALTIME, &bulletTimer);
         clock_gettime(CLOCK_REALTIME, &dodgeTimer);
         clock_gettime(CLOCK_REALTIME, &slashTimer);
 
@@ -435,7 +414,7 @@ void init_opengl(void)
 void createNewAsteroid(Game *g) //new mode param
 {
     if (g->nasteroids < MAX_ASTEROIDS) {
-        Asteroid *a = &g->aarr[g->nasteroids];
+        EnemR *a = &g->aarr[g->nasteroids];
         a->pos[0] = rnd()*g->width;
         a->pos[1] = rnd()*g->height;
         a->vel[0] = rnd()*2.0-1.0;
@@ -444,7 +423,8 @@ void createNewAsteroid(Game *g) //new mode param
         a->color[1] = 0.8f;
         a->color[2] = 0.8f;
         a->color[3] = 1.8f;
-        a->radius = rnd()*80.0 + 40.0;
+        //a->radius = rnd()*80.0 + 40.0;
+        a->radius = 20.0;
         ++g->nasteroids;
     }
 }
@@ -638,7 +618,7 @@ int check_keys(XEvent *e)
 	return 0;
 }
 
-void deleteAsteroid(Game *g, Asteroid *node)
+void deleteAsteroid(Game *g, EnemR *node)
 {
 	//Remove a node from doubly-linked list
 	//Must look at 4 special cases below.
@@ -675,7 +655,7 @@ void deleteAsteroid(Game *g, Asteroid *node)
 
 
 }*/
-void buildAsteroidFragment(Asteroid *ta, Asteroid *a)
+void buildAsteroidFragment(EnemR *ta, EnemR *a)
 {
 	//build ta from a
 	ta->nverts = 8;
@@ -742,7 +722,7 @@ void physics()
         ++i;
     }
      //Update asteroid positions
-    Asteroid *a = g.ahead;
+    EnemR *a = g.ahead;
     while (a) {
         a->pos[0] += a->vel[0];
         a->pos[1] += a->vel[1];
@@ -782,12 +762,12 @@ void physics()
                 //this asteroid is hit.
                 if (a->radius > MINIMUM_ASTEROID_SIZE) {
                     //break it into pieces.
-                    Asteroid *ta = a;
+                    EnemR *ta = a;
                     buildAsteroidFragment(ta, a);
                     int r = rand()%10+5;
                     for (int k=0; k<r; k++) {
                          //get the next asteroid position in the array
-                        Asteroid *ta = new Asteroid;
+                        EnemR *ta = new EnemR;
                         buildAsteroidFragment(ta, a);
                         //add to front of asteroid linked list
                         ta->next = g.ahead;
@@ -802,7 +782,7 @@ void physics()
                     a->color[2] = 0.1;
                     //asteroid is too small to break up
                     //delete the asteroid and bullet
-                    Asteroid *savea = a->next;
+                    EnemR *savea = a->next;
                     deleteAsteroid(&g, a);
                     a = savea;
                     g.nasteroids--;

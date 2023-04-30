@@ -32,3 +32,14 @@ public:
         next = NULL;
     }
 };
+
+class Bullet {
+public:
+    Vec pos;
+    Vec vel;
+    float color[3];
+    struct timespec time;
+public:
+    Bullet() { }
+};
+

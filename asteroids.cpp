@@ -5,7 +5,9 @@
 //mod spring 2015: added constructors
 //This program is a game starting point for a 3350 project.
 //
+//modified: Serafin, Marc, Paramveer, Zabdiel Garcia
 //
+
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
@@ -69,7 +71,9 @@ extern void messageK();
 extern void messageFire();
 extern void messageF();
 extern void rendEnemR(EnemR*);
-//extern void makeEnem(int nasteroids);
+extern void rendBullet(int, Bullet* barr);
+extern void buildAsteroidFragment(EnemR *ta, EnemR *a);
+
 
 using namespace std::chrono;
 Sword sword;
@@ -103,17 +107,6 @@ public:
        
 	}
 };
-
-class Bullet {
-public:
-	Vec pos;
-	Vec vel;
-	float color[3];
-	struct timespec time;
-public:
-	Bullet() { }
-};
-
 
 class Game {
 public:
@@ -161,20 +154,21 @@ public:
 			a->pos[2] = 0.0f;
 			a->angle = 0.0;
 			a->rotate = rnd() * 4.0 - 2.0;
-			a->color[0] = 0.8;
-			a->color[1] = 0.8;
-			a->color[2] = 0.7;
+			a->color[0] = 0.0;
+			a->color[1] = 1.0;
+			a->color[2] = 0.0;
 			a->vel[0] = (Flt)(rnd()*2.0-1.0);
 			a->vel[1] = (Flt)(rnd()*2.0-1.0);
-			//std::cout << "asteroid" << std::endl;
 			//add to front of linked list
 			a->next = ahead;
 			if (ahead != NULL)
+            {
 				ahead->prev = a;
+            }
 			ahead = a;
 			++nasteroids;
 		}
-
+        
 	    clock_gettime(CLOCK_REALTIME, &bulletTimer);
         clock_gettime(CLOCK_REALTIME, &dodgeTimer);
         clock_gettime(CLOCK_REALTIME, &slashTimer);
@@ -184,6 +178,7 @@ public:
 		delete [] barr;
 	}
 } g;
+
 
 //X Windows variables
 class X11_wrapper {
@@ -379,6 +374,8 @@ int main()
 		render();
         if(gl.obstR){
             rendEnemR(g.ahead);
+            rendBullet(g.nasteroids, g.barr);
+
         }
 		x11.swapBuffers();
 	}
@@ -570,7 +567,7 @@ int check_keys(XEvent *e)
                 return 1;
             }
             if (key == XK_space) {
-                createNewAsteroid(&g);
+               createNewAsteroid(&g);
             }
            /* if (key == XK_Left) {
                 g.ship.angle += 4.0;
@@ -655,31 +652,8 @@ void deleteAsteroid(Game *g, EnemR *node)
 
 
 }*/
-void buildAsteroidFragment(EnemR *ta, EnemR *a)
-{
-	//build ta from a
-	ta->nverts = 8;
-	ta->radius = a->radius / 2.0;
-	Flt r2 = ta->radius / 2.0;
-	Flt angle = 0.0f;
-	Flt inc = (PI * 2.0) / (Flt)ta->nverts;
-	for (int i=0; i<ta->nverts; i++) {
-		ta->vert[i][0] = sin(angle) * (r2 + rnd() * ta->radius);
-		ta->vert[i][1] = cos(angle) * (r2 + rnd() * ta->radius);
-		angle += inc;
-	}
-	ta->pos[0] = a->pos[0] + rnd()*10.0-5.0;
-	ta->pos[1] = a->pos[1] + rnd()*10.0-5.0;
-	ta->pos[2] = 0.0f;
-	ta->angle = 0.0;
-	ta->rotate = a->rotate + (rnd() * 4.0 - 2.0);
-	ta->color[0] = 0.8;
-	ta->color[1] = 0.8;
-	ta->color[2] = 0.7;
-	ta->vel[0] = a->vel[0] + (rnd()*2.0-1.0);
-	ta->vel[1] = a->vel[1] + (rnd()*2.0-1.0);
-	//std::cout << "frag" << std::endl;
-}
+
+
 void physics()
 {
   if(g.player.timestop == false) {
@@ -1122,26 +1096,6 @@ void render()
             gl.swordSlash = false;
         }
     }
-
-  	//-------------------------------------------------------------------------
-	//Draw the bullets
-	for (int i=0; i<g.nbullets; i++) {
-		Bullet *b = &g.barr[i];
-		//Log("draw bullet...\n");
-		glColor3f(1.0, 1.0, 1.0);
-		glBegin(GL_POINTS);
-		glVertex2f(b->pos[0],      b->pos[1]);
-		glVertex2f(b->pos[0]-1.0f, b->pos[1]);
-		glVertex2f(b->pos[0]+1.0f, b->pos[1]);
-		glVertex2f(b->pos[0],      b->pos[1]-1.0f);
-		glVertex2f(b->pos[0],      b->pos[1]+1.0f);
-		glColor3f(0.8, 0.8, 0.8);
-		glVertex2f(b->pos[0]-1.0f, b->pos[1]-1.0f);
-		glVertex2f(b->pos[0]-1.0f, b->pos[1]+1.0f);
-		glVertex2f(b->pos[0]+1.0f, b->pos[1]-1.0f);
-		glVertex2f(b->pos[0]+1.0f, b->pos[1]+1.0f);
-		glEnd();
-	}
 }
 
 

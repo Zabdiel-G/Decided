@@ -57,6 +57,7 @@ const Flt MINIMUM_ASTEROID_SIZE = 15.0;
 //Setup timers
 const double dodgeCooldown = 2.0;
 const double physicsRate = 1.0 / 60.0;
+const double playerPhysicsRate = 1.0/60.0;
 const double oobillion = 1.0 / 1e9;
 extern struct timespec timeStart, timeCurrent;
 extern struct timespec timePause;
@@ -312,7 +313,7 @@ public:
 // ---> for fullscreen x11(0, 0);
 
 /*bool canDodge() {
-    struct timespec currentTime;
+    struct timespec currentTim;
     clock_gettime(CLOCK_REALTIME, &currentTime); // get current system time
 
     double timeSinceLastDodge = (currentTime.tv_sec - lastDodgeTime) + (double)(currentTime.tv_nsec - lastDodgeTime) / 1000000000.0; // calculate time since last dodge in seconds
@@ -352,6 +353,7 @@ int main()
 	clock_gettime(CLOCK_REALTIME, &timeStart);
 	x11.set_mouse_position(100,100);
     int done=0;
+    int rate = 0;
 	while (!done) {
 		while (x11.getXPending()) {
 			XEvent e = x11.getXNextEvent();
@@ -364,13 +366,33 @@ int main()
 		timeCopy(&timeStart, &timeCurrent);
 		physicsCountdown += timeSpan;
 		while (physicsCountdown >= physicsRate) {
-            //std::cout << count << std::endl;
+            //std::cout << rate << std::endl;
             //count++;
             updateAbilityCooldowns(abilities, 3);
             playerPhysics();
-			physics();
-			physicsCountdown -= physicsRate;
-		}
+            if (g.player.timestop) {
+                if (rate > 20) {
+                    physics();
+                    rate = 0;
+                }
+                updateAbilityCooldowns(abilities, 3);
+                playerPhysics();
+                physicsCountdown -= physicsRate;
+                rate++;
+    
+            } 
+            else {
+                rate = 0;
+                physics();
+                updateAbilityCooldowns(abilities, 3);
+                playerPhysics();
+                physicsCountdown -= physicsRate;
+
+            }
+			//physics();
+		
+   		}
+
 		render();
         if(gl.obstR){
             rendEnemR(g.ahead);
@@ -656,7 +678,7 @@ void deleteAsteroid(Game *g, EnemR *node)
 
 void physics()
 {
-  if(g.player.timestop == false) {
+  //if(g.player.timestop == false) {
     Flt d0,d1,dist;
     //
     //
@@ -773,7 +795,7 @@ void physics()
             break;
         a = a->next;
     }
-  }
+  //}
     //}
 }
 void playerPhysics()
@@ -952,11 +974,15 @@ void playerPhysics()
         gl.canPressSword = true;
         //double st = timeDiff(&
     }
+    //extern bool swordEnemyCollision(Sword, EnemR);
 
+    //if (swordEnemyCollision(sword, a) {
+      //      };
     if (gl.keys[XK_x] && gl.canPressSword == true && gl.keyPressed == false) {
         gl.swordSlash = true;
         gl.canPressSword = false;
         gl.keyPressed = true;
+
     }
     else if (!gl.keys[XK_x]) {
         gl.keyPressed  = false;
@@ -1069,7 +1095,10 @@ void render()
         }
         glPushMatrix();
         glColor3f(100.0f, 100.0f, 100.0f);
-        glTranslatef(g.player.pos[0]+ (g.player.xdir*25.0f), g.player.pos[1]+ (g.player.ydir*25.0f), g.player.pos[2]);
+        sword.pos[0] = g.player.pos[0]+ (g.player.xdir*25.0f);
+        sword.pos[1] = g.player.pos[1]+ (g.player.ydir*25.0f);
+        sword.pos[2] = g.player.pos[2];
+        glTranslatef(sword.pos[0], sword.pos[1], sword.pos[2]);
         glRotatef(g.player.angle, 0.0f, 0.0f, 1.0f);
         glBegin(GL_QUADS);
             glVertex2f(-sword.width, -sword.height);

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include "sarboleda.h"
+#include "EnemR.h"
 using namespace std;
 using namespace std::chrono;
 extern struct timespec timeStart, timeCurrent;
@@ -53,7 +54,7 @@ Player::Player() {
 }
 
 //Ability Logic. Keeping track of cooldown and duration of every ability.//
-Ability abilities[3] = {{2, 1, 0, 0}, {1, .5, 0, 0}, {7, 2, 0, 0}};
+Ability abilities[3] = {{2, 1, 0, 0}, {1, .5, 0, 0}, {20, 7, 0, 0}};
 
 void updateAbilityCooldowns(Ability* abilityPtr, int numAbilities) 
 {
@@ -99,6 +100,18 @@ void useAbility(Ability& ability)
         }
     }
 }
+
+/*bool swordEnemyCollision(Sword sword, EnemR *enemy) 
+{
+    if (sword.pos[0] + sword.width >= enemy->pos[0] &&
+        sword.pos[0] <=enemy->width + enemy->pos[0] &&
+        sword.pos[1] + sword.height >= enemy->pos[1] &&
+        sword.pos[1] <= enemy->height + enemy->pos[1]) {
+        return true;
+        cout << "Hit detected" << endl;
+    }
+    return false;
+}*/
 
 UpdateAbilityCooldownsFunc updateFuncPtr = &updateAbilityCooldowns;
 UseAbilityFunc useFuncPtr = &useAbility;

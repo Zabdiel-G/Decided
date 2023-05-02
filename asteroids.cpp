@@ -337,6 +337,7 @@ void dodgeCdTracker();
 //==========================================================================
 // M A I N
 //==========================================================================
+int rate = 0;
 
 
 int main()
@@ -353,7 +354,7 @@ int main()
 	clock_gettime(CLOCK_REALTIME, &timeStart);
 	x11.set_mouse_position(100,100);
     int done=0;
-    int rate = 0;
+    //int rate = 0;
 	while (!done) {
 		while (x11.getXPending()) {
 			XEvent e = x11.getXNextEvent();
@@ -365,17 +366,19 @@ int main()
 		timeSpan = timeDiff(&timeStart, &timeCurrent);
 		timeCopy(&timeStart, &timeCurrent);
 		physicsCountdown += timeSpan;
+        updateAbilityCooldowns(abilities, 3);
 		while (physicsCountdown >= physicsRate) {
-            //std::cout << rate << std::endl;
+            //std::cout << physicsCountdown << std::endl;
             //count++;
             updateAbilityCooldowns(abilities, 3);
             playerPhysics();
             if (g.player.timestop) {
                 if (rate > 20) {
-                    physics();
+                    //physics();
                     rate = 0;
                 }
-                updateAbilityCooldowns(abilities, 3);
+                physics();
+                //updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
                 physicsCountdown -= physicsRate;
                 rate++;
@@ -384,7 +387,7 @@ int main()
             else {
                 rate = 0;
                 physics();
-                updateAbilityCooldowns(abilities, 3);
+                //updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
                 physicsCountdown -= physicsRate;
 
@@ -678,8 +681,10 @@ void deleteAsteroid(Game *g, EnemR *node)
 
 void physics()
 {
-  //if(g.player.timestop == false) {
     Flt d0,d1,dist;
+    EnemR *a = g.ahead;
+  if(g.player.timestop == false ||rate > 20) {
+    //Flt d0,d1,dist;
     //
     //
     //Update bullet positions
@@ -718,7 +723,7 @@ void physics()
         ++i;
     }
      //Update asteroid positions
-    EnemR *a = g.ahead;
+    //EnemR *a = g.ahead;
     while (a) {
         a->pos[0] += a->vel[0];
         a->pos[1] += a->vel[1];
@@ -738,6 +743,10 @@ void physics()
         a->angle += a->rotate;
         a = a->next;
     }
+  }
+    //extern bool swordEnemyCollision(Sword, *EnemR);
+
+    //swordEnemyCollision(sword,a);
     //
     //Asteroid collision with bullets?
     //If collision detected:
@@ -745,6 +754,59 @@ void physics()
     //     2. break the asteroid into pieces
     //        if asteroid small, delete it
     a = g.ahead;
+  
+    extern bool swordEnemyCollision(Sword, EnemR*,bool);
+
+   while (a) {
+        if (swordEnemyCollision(sword,a, gl.swordSlash)) {
+
+                 /*   a->color[0] = 1.0;
+                    a->color[1] = 0.1;
+                    a->color[2] = 0.1;
+                    //asteroid is too small to break up
+                    //delete the asteroid and bullet
+                    EnemR *savea = a->next;
+                    deleteAsteroid(&g, a);
+                    a = savea;
+                    g.nasteroids--;
+                    */
+            if (a->radius > MINIMUM_ASTEROID_SIZE) {
+                    //break it into pieces.
+                    EnemR *ta = a;
+                    buildAsteroidFragment(ta, a);
+                    int r = rand()%10+5;
+                    for (int k=0; k<r; k++) {
+                         //get the next asteroid position in the array
+                        EnemR *ta = new EnemR;
+                        buildAsteroidFragment(ta, a);
+                        //add to front of asteroid linked list
+                        ta->next = g.ahead;
+                        if (g.ahead != NULL)
+                            g.ahead->prev = ta;
+                        g.ahead = ta;
+                        g.nasteroids++;
+                    }
+                } else {
+                    a->color[0] = 1.0;
+                    a->color[1] = 0.1;
+                    a->color[2] = 0.1;
+                    //asteroid is too small to break up
+                    //delete the asteroid and bullet
+                    EnemR *savea = a->next;
+                    deleteAsteroid(&g, a);
+                    a = savea;
+                    g.nasteroids--;
+                }              
+        
+        }
+
+       if (a == NULL) {
+            break;
+       }
+        a = a->next;
+    }
+    //swordEnemyCollision(sword,a);
+
     while (a) {
         //is there a bullet within its radius?
         int i=0;
@@ -795,17 +857,23 @@ void physics()
             break;
         a = a->next;
     }
+
+   /* extern bool swordEnemyCollision(Sword, EnemR);
+    swordEnemyCollision(sword, *a);*/
+
   //}
-    //}
+    
 }
 void playerPhysics()
 {
-
+    
     //Update ship position
     g.player.pos[0] += g.player.vel[0];
     g.player.pos[1] += g.player.vel[1];
     //Check for collision with window edges
-    if (g.player.pos[0] < 0.0) {
+    extern void playerWallCollision(Player&, float, float);
+    playerWallCollision(g.player, gl.xres, gl.yres);
+    /*if (g.player.pos[0] < 0.0) {
         if (g.player.vel[0] < player.maxSpeed ) {
             g.player.pos[0] = 0.0;
             g.player.vel[0] = -g.player.vel[0]*.01;
@@ -828,7 +896,7 @@ void playerPhysics()
     else if (g.player.pos[1] > (float)gl.yres) {
         g.player.pos[1] = (float)gl.yres;
         g.player.vel[1] = -g.player.vel[1] *0.00005;
-    }
+    }*/
 
     //---------------------------------------------------
     //check keys pressed now
@@ -974,8 +1042,8 @@ void playerPhysics()
         gl.canPressSword = true;
         //double st = timeDiff(&
     }
-    //extern bool swordEnemyCollision(Sword, EnemR);
-
+   // extern bool swordEnemyCollision(Sword, EnemR);
+    //swordEnemyCollision(sword, *a);
     //if (swordEnemyCollision(sword, a) {
       //      };
     if (gl.keys[XK_x] && gl.canPressSword == true && gl.keyPressed == false) {
@@ -1107,16 +1175,16 @@ void render()
             glVertex2f( sword.width, -sword.height);
         glEnd();
         glPopMatrix();
-
+        
         double elapsed = timeDiff(&swordTime, &timeCurrent);
         int roundedDodge = std::round(elapsed);
-
+        //cout << elapsed << endl;
         ggprint8b(&placeholder, 16, 0xff000000, "Cooldown: %i", roundedDodge);
 
        // std::cout << elapsed << std::endl;
        
 
-        if (elapsed > -0.04) {
+        if (elapsed > -0.054) {
             gl.canPressSword = false;
             glColor3f(100.0f, 100.0f, 100.0f);
         } else {

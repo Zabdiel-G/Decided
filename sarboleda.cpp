@@ -4,6 +4,7 @@
 #include <iostream>
 #include "sarboleda.h"
 #include "EnemR.h"
+//#include "Global.h"
 using namespace std;
 using namespace std::chrono;
 extern struct timespec timeStart, timeCurrent;
@@ -101,20 +102,56 @@ void useAbility(Ability& ability)
     }
 }
 
-/*bool swordEnemyCollision(Sword sword, EnemR *enemy) 
-{
-    if (sword.pos[0] + sword.width >= enemy->pos[0] &&
-        sword.pos[0] <=enemy->width + enemy->pos[0] &&
-        sword.pos[1] + sword.height >= enemy->pos[1] &&
-        sword.pos[1] <= enemy->height + enemy->pos[1]) {
-        return true;
-        cout << "Hit detected" << endl;
-    }
-    return false;
-}*/
-
 UpdateAbilityCooldownsFunc updateFuncPtr = &updateAbilityCooldowns;
 UseAbilityFunc useFuncPtr = &useAbility;
+//collisions
+bool swordEnemyCollision(Sword sword, EnemR *enemy, bool slash) 
+{
+    int hit = 0;
+    if (sword.pos[0] - sword.width/2 <= enemy->pos[0] + enemy->radius &&
+        sword.pos[0] + sword.width/2 >= enemy->pos[0] - enemy->radius &&
+        sword.pos[1] + sword.height/2 >= enemy->pos[1] - enemy->radius &&
+        sword.pos[1] - sword.height/2 <= enemy->pos[1] + enemy->radius &&
+        slash == true)
+        {
+            hit++;
+            cout <<hit << endl;
+            cout << "Hit detected" << endl;
+            return true;
+    }
+    return false;
+}
+
+
+void playerWallCollision(Player& player, float xres, float yres)
+{
+    //negative x
+    if (player.pos[0] < 0.0) {
+        if (player.vel[0] < player.maxSpeed) {
+            player.pos[0] = 0.0;
+            player.vel[0] = -player.vel[0]*0.01;
+        }
+        else {
+            player.pos[0] = 0.0;
+            player.vel[0] = -player.vel[0]*0.00005;
+        }
+    }
+    //under y
+    else if (player.pos[1] < 0.0) {
+        player.pos[1] = 0.0;
+        player.vel[1] = -player.vel[1]*0.0005;
+    }
+    //positve x
+    else if (player.pos[0] > (float)xres) {
+        player.pos[0] = (float)xres;
+        player.vel[0] = -player.vel[0]*0.00005;
+    }
+    //above y
+    else if (player.pos[1] > (float)yres) {
+        player.pos[1] = (float)yres;
+        player.vel[1] = player.vel[1]*0.00005;
+    }
+}
 
 
 //Movement of the player

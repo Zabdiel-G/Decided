@@ -107,16 +107,16 @@ UseAbilityFunc useFuncPtr = &useAbility;
 //collisions
 bool swordEnemyCollision(Sword sword, EnemR *enemy, bool slash) 
 {
-    int hit = 0;
+    //int hit = 0;
     if (sword.pos[0] - sword.width/2 <= enemy->pos[0] + enemy->radius &&
         sword.pos[0] + sword.width/2 >= enemy->pos[0] - enemy->radius &&
         sword.pos[1] + sword.height/2 >= enemy->pos[1] - enemy->radius &&
         sword.pos[1] - sword.height/2 <= enemy->pos[1] + enemy->radius &&
         slash == true)
         {
-            hit++;
-            cout <<hit << endl;
-            cout << "Hit detected" << endl;
+            //hit++;
+            //cout <<hit << endl;
+            //cout << "Hit detected" << endl;
             return true;
     }
     return false;

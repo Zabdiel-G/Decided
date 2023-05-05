@@ -53,7 +53,101 @@ Player::Player() {
      canDodge = true;
      timestop = false;
 }
+bool directoryExists(const char* dirPath) 
+{
+    return access(dirPath, F_OK) != -1;
+}
+void makeSaveFile(int q, Player player, EnemR *enemy) 
+{
+    //if the Save file directory does not exist, then make it
+    string directoryName = "SaveFile";
+    if (!directoryExists("SaveFile")){
+        system("mkdir SaveFile");
+    }
+    q = q+1;
+    //cout << "succesfully made saveFile" << endl;
+    char fileName[50];
+    char command[100];
+    //make the .txt file in the SaveFile directory
+    sprintf(fileName, "SaveFile/loadfile%d.txt", q); 
+    sprintf(command, "echo > %s", fileName);
+    system(command);
+    ofstream out(fileName);
+    
+    if (out.is_open()) {
+        //player information
+        out << player.pos[0] << " "; 
+        out << player.pos[1] << " ";
+        out << player.pos[2] << " ";
+        out << player.angle << " ";
+        int enemyCount = 0;
+        //enemy information
+        EnemR *e = enemy;
+        while (e != NULL) {
+            enemyCount++;
+            e = e->next;
+        }
+        out << enemyCount << " ";
+        e = enemy;
+        while (e != NULL) {
+            out << e->pos[0] << " ";
+            out << e->pos[1] << " ";
+            out << e->pos[2] << " ";
+            out << e->angle << " ";
+            e = e->next; 
+        }
+    }
 
+
+}
+int countSaveFile() 
+{
+
+    int fileNum = 0;
+    char line[100];
+    system("touch SaveFileMeta.txt");
+    if (!directoryExists("SaveFile")) {
+        return 0;
+    }
+    const char saveMeta[] = "SaveFileMeta.txt";
+    ifstream fin(saveMeta);
+    system("cd SaveFile;ls -1 > ../SaveFileMeta.txt");
+    while (!fin.eof()) {
+        //cout << "fileNum" << fileNum << endl;
+        fileNum++;
+        fin >> line;
+    }
+    system("rm SaveFileMeta.txt");
+    return fileNum;
+
+
+}
+void loadSaveFile(int fileNumber, Player& player, EnemR*& enemy) 
+{   
+    char fileName[50];
+    //make the .txt file in the SaveFile directory
+    sprintf(fileName, "SaveFile/loadfile%d.txt", fileNumber);
+    ifstream fin(fileName);
+    
+    fin >> player.pos[0];
+    fin >> player.pos[1];
+    fin >> player.pos[2];
+    fin >> player.angle;
+
+    int numberOfEnemies = 0;
+    fin >> numberOfEnemies;
+    //cout << "numberOfEnemies"<< numberOfEnemies << endl;
+    EnemR* currentEnemy = enemy;
+
+    for (int i = 0; i < numberOfEnemies; i++) {
+        fin >> currentEnemy->pos[0];
+        fin >> currentEnemy->pos[1];
+        fin >> currentEnemy->pos[2];
+        fin >> currentEnemy->angle;
+        // move to the next enemy in the linked list
+        currentEnemy = currentEnemy->next;
+    }
+}
 //Ability Logic. Keeping track of cooldown and duration of every ability.//
 Ability abilities[3] = {{2, 1, 0, 0}, {1, .5, 0, 0}, {20, 7, 0, 0}};
 
@@ -107,17 +201,13 @@ UseAbilityFunc useFuncPtr = &useAbility;
 //collisions
 bool swordEnemyCollision(Sword sword, EnemR *enemy, bool slash) 
 {
-    //int hit = 0;
     if (sword.pos[0] - sword.width/2 <= enemy->pos[0] + enemy->radius &&
         sword.pos[0] + sword.width/2 >= enemy->pos[0] - enemy->radius &&
         sword.pos[1] + sword.height/2 >= enemy->pos[1] - enemy->radius &&
         sword.pos[1] - sword.height/2 <= enemy->pos[1] + enemy->radius &&
         slash == true)
         {
-            //hit++;
-            //cout <<hit << endl;
-            //cout << "Hit detected" << endl;
-            return true;
+           return true;
     }
     return false;
 }
@@ -152,7 +242,8 @@ void playerWallCollision(Player& player, float xres, float yres)
         player.vel[1] = player.vel[1]*0.00005;
     }
 }
-
+//to do
+//enemy to wall collision
 
 //Movement of the player
 void moveLeft(Player& player, float xdir, float MAX_SPEED) 

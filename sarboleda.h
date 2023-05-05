@@ -1,5 +1,8 @@
+
 //file name: sarboleda.h
 #include <chrono>
+#include <fstream>
+#include <unistd.h>
 #pragma once
 typedef float Flt;
 typedef float Vec[3];

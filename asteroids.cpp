@@ -339,7 +339,7 @@ void dodgeCdTracker();
 //==========================================================================
 int rate = 0;
 
-
+extern void Menu(float x, float y);
 int main()
 {
     g.player.pos[0] = (Flt)(gl.xres/2);
@@ -355,6 +355,7 @@ int main()
 	x11.set_mouse_position(100,100);
     int done=0;
     //int rate = 0;
+    Menu(gl.xres, gl.yres);
 	while (!done) {
 		while (x11.getXPending()) {
 			XEvent e = x11.getXNextEvent();

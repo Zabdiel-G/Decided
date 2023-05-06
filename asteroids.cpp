@@ -331,6 +331,7 @@ void render();
 void playerPhysics();
 //bool canDodge();
 void dodgeCdTracker();
+void pauseMenuChoices();
 //extern void updateAbilityCooldowns(*Ability, int);
 //extern void useAbility(&Ability);
 
@@ -340,6 +341,7 @@ void dodgeCdTracker();
 int rate = 0;
 
 extern void Menu(float x, float y);
+extern void pauseMenu(int, float, float);
 int main()
 {
     g.player.pos[0] = (Flt)(gl.xres/2);
@@ -369,27 +371,37 @@ int main()
 		physicsCountdown += timeSpan;
         updateAbilityCooldowns(abilities, 3);
 		while (physicsCountdown >= physicsRate) {
+            if (gl.isPaused) {
+                pauseMenuChoices();
+                //std::cout << gl.pauseMenuButton << std::endl;
+            }
             //std::cout << physicsCountdown << std::endl;
             //count++;
-            updateAbilityCooldowns(abilities, 3);
-            playerPhysics();
+            if (!gl.isPaused) {
+                updateAbilityCooldowns(abilities, 3);
+                playerPhysics();
+            }
             if (g.player.timestop) {
                 if (rate > 20) {
                     //physics();
                     rate = 0;
                 }
+                if (!gl.isPaused) {
                 physics();
                 //updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
+                }
                 physicsCountdown -= physicsRate;
                 rate++;
     
             } 
             else {
+                if (!gl.isPaused) {
                 rate = 0;
                 physics();
                 //updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
+                }
                 physicsCountdown -= physicsRate;
 
             }
@@ -621,6 +633,7 @@ int check_keys(XEvent *e)
 	        break;
 	    case XK_f: //param's feature
 	    //messageF();
+            gl.isPaused = true;
             break;
 		case XK_s:
         serafinFeatureMode = !serafinFeatureMode;
@@ -1101,6 +1114,36 @@ void playerPhysics()
             g.mouseThrustOn = false;
     }
 }
+bool upKeyPressed = false;
+bool downKeyPressed = false;
+
+void pauseMenuChoices() {
+   // bool upKeyPressed = false;
+   // bool downKeyPressed = false;
+
+   if (gl.keys[XK_Up] && upKeyPressed == false) {
+        upKeyPressed = true;
+        if (gl.pauseMenuButton == 1) {
+            gl.pauseMenuButton = 3;
+        }
+        else {
+
+            gl.pauseMenuButton = gl.pauseMenuButton - 1;
+        }
+    }
+
+    if (gl.keys[XK_Down] && downKeyPressed == false) {
+        upKeyPressed = true;
+        if (gl.pauseMenuButton == 3) {
+            gl.pauseMenuButton = 1;
+        }
+
+        else {
+            gl.pauseMenuButton = gl.pauseMenuButton + 1;
+        }
+    }
+    std::cout <<gl.pauseMenuButton << std::endl;
+}
 
 
 void render()
@@ -1193,6 +1236,10 @@ void render()
             timerInitiliazed = false;
             gl.swordSlash = false;
         }
+    }
+    //pauseMenu(gl.xres, gl.yres);
+    if (gl.isPaused) {
+        pauseMenu(gl.pauseMenuButton, gl.xres, gl.yres);
     }
 }
 

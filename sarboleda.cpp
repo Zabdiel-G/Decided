@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include "sarboleda.h"
+#include <GL/glut.h>
 #include "EnemR.h"
 //#include "Global.h"
 using namespace std;
@@ -148,6 +149,66 @@ void loadSaveFile(int fileNumber, Player& player, EnemR*& enemy)
         currentEnemy = currentEnemy->next;
     }
 }
+void pauseMenu(int i, float xres, float yres) 
+{
+    i = i-1;
+    float boxWidth = xres / 2.0f;
+    float boxHeight = yres / 2.0f;
+    float x = (xres - boxWidth) / 2.0f;
+    float y = (yres - boxHeight - 30.0f) / 2.0f;
+    //Draw the box
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glVertex2f(x, y);
+    glVertex2f(x + boxWidth, y);
+    glVertex2f(x + boxWidth, y + boxHeight);
+    glVertex2f(x, y + boxHeight);
+    glEnd();
+    
+    //write text
+    float buttonY[3];
+    float buttonWidth = boxWidth - 20.0f;
+    float buttonHeight = (boxHeight * 0.2f);
+    float buttonX = x + 10.0f;
+    for (int j = 0; j < 3; j++) {
+    buttonY[j] = y + boxHeight - (boxHeight/2.5) - j * (buttonHeight + 10.0f);
+    }
+    //Draw the buttons
+    
+
+    glBegin(GL_QUADS);
+    for(int k = 0; k < 3; k++) {
+        glColor3f(1,1,1);
+        glVertex2f(buttonX, buttonY[k]);
+        glVertex2f(buttonX + buttonWidth, buttonY[k]);
+        glVertex2f(buttonX + buttonWidth, buttonY[k] + buttonHeight);
+        glVertex2f(buttonX, buttonY[k] + buttonHeight);
+    }
+    glEnd();
+
+    glBegin(GL_QUADS);
+    glColor3f(0.0f, 0.0f, 0.0f); 
+    glVertex2f(buttonX - 2.0f, buttonY[i] - 2.0f);
+    glVertex2f(buttonX + buttonWidth + 2.0f, buttonY[i] - 2.0f);
+    glVertex2f(buttonX + buttonWidth + 2.0f, buttonY[i] + buttonHeight + 2.0f);
+    glVertex2f(buttonX - 2.0f, buttonY[i] + buttonHeight + 2.0f);
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glVertex2f(buttonX, buttonY[i]); 
+    glVertex2f(buttonX + buttonWidth, buttonY[i]);
+    glVertex2f(buttonX + buttonWidth, buttonY[i] + buttonHeight); 
+    glVertex2f(buttonX, buttonY[i] + buttonHeight);
+    glEnd();
+
+    Rect r;
+    unsigned int c = 0x00ffff44;
+    r.bot = y - y/10;
+    r.left = xres/2;
+    r.center = 0;
+    ggprint8b(&r, 16, 0x00ffffff, "PAUSED", 32);
+
+ 
+}
+
 //Ability Logic. Keeping track of cooldown and duration of every ability.//
 Ability abilities[3] = {{2, 1, 0, 0}, {1, .5, 0, 0}, {20, 7, 0, 0}};
 

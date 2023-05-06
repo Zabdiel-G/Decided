@@ -3,6 +3,9 @@
 #include <chrono>
 #include <fstream>
 #include <unistd.h>
+#include <stdio.h>
+#include <GL/glx.h>
+#include "fonts.h"
 #pragma once
 typedef float Flt;
 typedef float Vec[3];

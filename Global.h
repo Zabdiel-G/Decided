@@ -19,13 +19,17 @@ class Global
         int xres, yres;
         char keys[65536];
         // bool serafinFeature;
+        int pauseMenuButton;
         bool obstR;
         bool dodgePressing;
         bool swordSlash;
         bool canPressSword;
         bool keyPressed;
+        bool isPaused;
         Global() 
         {
+            pauseMenuButton = 1;
+            isPaused = false;
             xres = 640;
             yres = 480;
             memset(keys, 0, 65536);

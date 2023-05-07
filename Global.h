@@ -26,9 +26,20 @@ class Global
         bool canPressSword;
         bool keyPressed;
         bool isPaused;
+        bool isLoad;
+        bool isSave;
+        bool upKeyPressed;
+        bool downKeyPressed;
+        int menuFlag;
+
         Global() 
         {
-            pauseMenuButton = 1;
+            menuFlag = 0;
+            isLoad = false;
+            isSave = false;
+            upKeyPressed = false;
+            downKeyPressed = false;
+            pauseMenuButton = 0;
             isPaused = false;
             xres = 640;
             yres = 480;

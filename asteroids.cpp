@@ -341,7 +341,7 @@ void pauseMenuChoices();
 int rate = 0;
 
 extern void Menu(float x, float y);
-extern void pauseMenu(int, float, float);
+extern void pauseMenu(int, float, float,int);
 int main()
 {
     g.player.pos[0] = (Flt)(gl.xres/2);
@@ -371,13 +371,15 @@ int main()
 		physicsCountdown += timeSpan;
         updateAbilityCooldowns(abilities, 3);
 		while (physicsCountdown >= physicsRate) {
-            if (gl.isPaused) {
+            if (gl.isPaused || gl.isLoad || gl.isSave) {
                 pauseMenuChoices();
+                physicsCountdown -= physicsRate;
                 //std::cout << gl.pauseMenuButton << std::endl;
-            }
+            }  
             //std::cout << physicsCountdown << std::endl;
             //count++;
-            if (!gl.isPaused) {
+            else {
+            if (!gl.isPaused || !gl.isLoad || !gl.isSave) {
                 updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
             }
@@ -386,27 +388,23 @@ int main()
                     //physics();
                     rate = 0;
                 }
-                if (!gl.isPaused) {
                 physics();
                 //updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
-                }
                 physicsCountdown -= physicsRate;
                 rate++;
     
             } 
-            else {
-                if (!gl.isPaused) {
+            else { 
                 rate = 0;
                 physics();
                 //updateAbilityCooldowns(abilities, 3);
                 playerPhysics();
-                }
                 physicsCountdown -= physicsRate;
 
             }
 			//physics();
-		
+            }
    		}
 
 		render();
@@ -1114,35 +1112,93 @@ void playerPhysics()
             g.mouseThrustOn = false;
     }
 }
-bool upKeyPressed = false;
-bool downKeyPressed = false;
-
 void pauseMenuChoices() {
-   // bool upKeyPressed = false;
-   // bool downKeyPressed = false;
-
-   if (gl.keys[XK_Up] && upKeyPressed == false) {
-        upKeyPressed = true;
-        if (gl.pauseMenuButton == 1) {
+    extern void makeSaveFile(int, Player, EnemR*);
+    extern int countSaveFile();
+    extern void loadSaveFile(int, Player&, EnemR*&);
+    if (gl.keys[XK_Up]) {
+        if (gl.pauseMenuButton <= 0) {
             gl.pauseMenuButton = 3;
         }
         else {
-
             gl.pauseMenuButton = gl.pauseMenuButton - 1;
         }
     }
-
-    if (gl.keys[XK_Down] && downKeyPressed == false) {
-        upKeyPressed = true;
-        if (gl.pauseMenuButton == 3) {
-            gl.pauseMenuButton = 1;
+    if (gl.keys[XK_Down]) {
+        if (gl.pauseMenuButton >= 3) {
+            gl.pauseMenuButton = 0;
         }
-
         else {
             gl.pauseMenuButton = gl.pauseMenuButton + 1;
         }
     }
     std::cout <<gl.pauseMenuButton << std::endl;
+    if (gl.isPaused) {
+        
+        if (gl.keys[XK_a] ) {
+            switch (gl.pauseMenuButton) {
+                case 0:
+                    gl.isPaused = false;
+                    break;
+                case 1:
+                    gl.menuFlag = 1;
+                    gl.isSave = true;
+                    gl.isPaused = false;
+                    break;
+                case 2:
+                    gl.menuFlag = 2;
+                    gl.isLoad = true;
+                    gl.isPaused = false;
+                    break;
+                case 3:
+                    exit(0);
+            }
+        }
+    }
+
+    if (gl.isLoad) {
+        if (gl.keys[XK_a] ) {
+            switch (gl.pauseMenuButton) {
+                case 0:
+                    gl.menuFlag = 0;
+                    gl.isPaused = true;
+                    gl.isLoad = false;
+                    break;
+                case 1:
+                    loadSaveFile(0, g.player, g.ahead); 
+                    break;
+                case 2:
+                    loadSaveFile(1, g.player, g.ahead);
+                    break;
+                case 3:
+                    gl.isPaused = false;
+                    gl.isLoad = false;
+            }
+        }
+
+    }
+     if (gl.isSave) {
+        if (gl.keys[XK_a]) {
+            switch (gl.pauseMenuButton) {
+                case 0:
+                    gl.menuFlag = 0;
+                    gl.isPaused = true;
+                    gl.isSave = false;
+                    break;
+                case 1:
+                    makeSaveFile(0, g.player, g.ahead);
+                    break;
+                case 2:
+                    makeSaveFile(1, g.player, g.ahead);
+                    break;
+                case 3:
+                    gl.isPaused = false;
+                    gl.isSave = false;
+            }
+        }
+
+    }
+
 }
 
 
@@ -1238,8 +1294,8 @@ void render()
         }
     }
     //pauseMenu(gl.xres, gl.yres);
-    if (gl.isPaused) {
-        pauseMenu(gl.pauseMenuButton, gl.xres, gl.yres);
+    if (gl.isPaused || gl.isLoad || gl.isSave) {
+        pauseMenu(gl.pauseMenuButton, gl.xres, gl.yres, gl.menuFlag);
     }
 }
 

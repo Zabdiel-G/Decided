@@ -65,7 +65,7 @@ void makeSaveFile(int q, Player player, EnemR *enemy)
     if (!directoryExists("SaveFile")){
         system("mkdir SaveFile");
     }
-    q = q+1;
+    //q = q+1;
     //cout << "succesfully made saveFile" << endl;
     char fileName[50];
     char command[100];
@@ -149,9 +149,9 @@ void loadSaveFile(int fileNumber, Player& player, EnemR*& enemy)
         currentEnemy = currentEnemy->next;
     }
 }
-void pauseMenu(int i, float xres, float yres) 
+void pauseMenu(int i, float xres, float yres, int flag) 
 {
-    i = i-1;
+    //i = i-1;
     float boxWidth = xres / 2.0f;
     float boxHeight = yres / 2.0f;
     float x = (xres - boxWidth) / 2.0f;
@@ -165,19 +165,18 @@ void pauseMenu(int i, float xres, float yres)
     glVertex2f(x, y + boxHeight);
     glEnd();
     
-    //write text
     float buttonY[3];
     float buttonWidth = boxWidth - 20.0f;
     float buttonHeight = (boxHeight * 0.2f);
-    float buttonX = x + 10.0f;
-    for (int j = 0; j < 3; j++) {
+    float buttonX = x + (boxWidth - buttonWidth)/2.0f;
+    for (int j = 0; j < 4; j++) {
     buttonY[j] = y + boxHeight - (boxHeight/2.5) - j * (buttonHeight + 10.0f);
     }
     //Draw the buttons
     
 
     glBegin(GL_QUADS);
-    for(int k = 0; k < 3; k++) {
+    for(int k = 0; k < 4; k++) {
         glColor3f(1,1,1);
         glVertex2f(buttonX, buttonY[k]);
         glVertex2f(buttonX + buttonWidth, buttonY[k]);
@@ -200,14 +199,105 @@ void pauseMenu(int i, float xres, float yres)
     glEnd();
 
     Rect r;
-    unsigned int c = 0x00ffff44;
-    r.bot = y - y/10;
-    r.left = xres/2;
+    r.bot = y + boxHeight;
+    r.left = x + boxWidth/2;
     r.center = 0;
-    ggprint8b(&r, 16, 0x00ffffff, "PAUSED", 32);
+    ggprint8b(&r, 100, 0x00ffff44, "PAUSED"); 
+    const char* buttonText[4] = {"continue", "save", "load", "quit"};
+    switch (flag) {
+        case 0:
+            buttonText[0] = "Continue";
+            buttonText[1] = "Save";
+            buttonText[2] = "Load";
+            buttonText[3] = "Quit";
+            break;
+        case 1: 
+            buttonText[0] = "Back";
+            buttonText[1] = "Save 1";
+            buttonText[2] = "Save 2";
+            buttonText[3] = "Cotinue";
+            break;
+        case 2:
+            buttonText[0] = "Back";
+            buttonText[1] = "Load 1";
+            buttonText[2] = "Load 2";
+            buttonText[3] = "Continue";
 
- 
+            break; 
+
+    }
+    for(int k = 0; k < 4; k++) {
+        glColor3f(1,1,1);
+        glVertex2f(buttonX, buttonY[k]);
+        glVertex2f(buttonX + buttonWidth, buttonY[k]);
+        glVertex2f(buttonX + buttonWidth, buttonY[k] + buttonHeight);
+        glVertex2f(buttonX, buttonY[k] + buttonHeight);
+        Rect r;
+        r.bot = buttonY[k] + buttonHeight/2.0f - 8.0f;
+        r.left = buttonX + buttonWidth/2.0f;
+        r.center = 1;
+        ggprint8b(&r, 0, 0x000000ff, buttonText[k]);
+    }
 }
+
+void loadMenu(int i, float xres, float yres)
+{
+    //i = i-1;
+    float boxWidth = xres / 2.0f;
+    float boxHeight = yres / 2.0f;
+    float x = (xres - boxWidth) / 2.0f;
+    float y = (yres - boxHeight - 30.0f) / 2.0f;
+    //Draw the box
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glVertex2f(x, y);
+    glVertex2f(x + boxWidth, y);
+    glVertex2f(x + boxWidth, y + boxHeight);
+    glVertex2f(x, y + boxHeight);
+    glEnd();
+
+    float buttonY[3];
+    float buttonWidth = boxWidth - 20.0f;
+    float buttonHeight = (boxHeight * 0.2f);
+    float buttonX = x + (boxWidth - buttonWidth)/2.0f;
+    for (int j = 0; j < 4; j++) {
+    buttonY[j] = y + boxHeight - (boxHeight/2.5) - j * (buttonHeight + 10.0f);
+    }
+    //Draw the buttons
+
+
+    glBegin(GL_QUADS);
+    for(int k = 0; k < 4; k++) {
+        glColor3f(1,1,1);
+        glVertex2f(buttonX, buttonY[k]);
+        glVertex2f(buttonX + buttonWidth, buttonY[k]);
+        glVertex2f(buttonX + buttonWidth, buttonY[k] + buttonHeight);
+        glVertex2f(buttonX, buttonY[k] + buttonHeight);
+    }
+    glEnd();
+
+    glBegin(GL_QUADS);
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glVertex2f(buttonX - 2.0f, buttonY[i] - 2.0f);
+    glVertex2f(buttonX + buttonWidth + 2.0f, buttonY[i] - 2.0f);
+    glVertex2f(buttonX + buttonWidth + 2.0f, buttonY[i] + buttonHeight + 2.0f);
+    glVertex2f(buttonX - 2.0f, buttonY[i] + buttonHeight + 2.0f);
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glVertex2f(buttonX, buttonY[i]);
+    glVertex2f(buttonX + buttonWidth, buttonY[i]);
+    glVertex2f(buttonX + buttonWidth, buttonY[i] + buttonHeight);
+    glVertex2f(buttonX, buttonY[i] + buttonHeight);
+    glEnd();
+
+    Rect r;
+    r.bot = y + boxHeight;
+    r.left = x + boxWidth/2;
+    r.center = 0;
+    ggprint8b(&r, 100, 0x00ffff44, "Choose Save File");
+}
+
+
+
 
 //Ability Logic. Keeping track of cooldown and duration of every ability.//
 Ability abilities[3] = {{2, 1, 0, 0}, {1, .5, 0, 0}, {20, 7, 0, 0}};

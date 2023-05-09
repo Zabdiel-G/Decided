@@ -1111,7 +1111,7 @@ void pauseMenuChoices() {
     // Check if up key is pressed
     if (gl.keys[XK_Up] && !isUpPressed) {
         gl.pauseMenuButton = (gl.pauseMenuButton + 3) % 4;
-        std::cout << gl.pauseMenuButton << std::endl;
+        //std::cout << gl.pauseMenuButton << std::endl;
         isUpPressed = true;
     } else if (!gl.keys[XK_Up]) {
         isUpPressed = false;
@@ -1120,13 +1120,13 @@ void pauseMenuChoices() {
     // Check if down key is pressed
     if (gl.keys[XK_Down] && !isDownPressed) {
         gl.pauseMenuButton = (gl.pauseMenuButton + 1) % 4;
-        std::cout << gl.pauseMenuButton << std::endl;
+        //std::cout << gl.pauseMenuButton << std::endl;
         isDownPressed = true;
     } else if (!gl.keys[XK_Down]) {
         isDownPressed = false;
     }
 
-    std::cout <<gl.pauseMenuButton << std::endl;
+    //std::cout <<gl.pauseMenuButton << std::endl;
 
     if (gl.isPaused) {
         

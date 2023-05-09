@@ -50,7 +50,7 @@ const float timeslice = 1.0f;
 const float gravity = -0.2f;
 #define PI 3.141592653589793
 #define ALPHA 1
-const int MAX_BULLETS = 11;
+const int MAX_BULLETS = 100;
 const Flt MINIMUM_ASTEROID_SIZE = 15.0;
 
 //-----------------------------------------------------------------------------
@@ -339,7 +339,9 @@ void pauseMenuChoices();
 // M A I N
 //==========================================================================
 int rate = 0;
-
+extern void makeSaveFile(int, Player, EnemR*);
+extern int countSaveFile();
+extern void loadSaveFile(int, Player&, EnemR*&);
 extern void Menu(float x, float y);
 extern void pauseMenu(int, float, float,int);
 int main()
@@ -628,6 +630,7 @@ int check_keys(XEvent *e)
 		case XK_Escape:
 			return 1;
         case XK_k:
+
 	        break;
 	    case XK_f: //param's feature
 	    //messageF();
@@ -635,7 +638,14 @@ int check_keys(XEvent *e)
             break;
 		case XK_s:
         serafinFeatureMode = !serafinFeatureMode;
-        std::cout << "Serafin feature mode activate" << std::endl; 
+            if (serafinFeatureMode == true) {
+                makeSaveFile(5,g.player,g.ahead);
+                loadSaveFile(4,g.player,g.ahead);
+            }
+            if (serafinFeatureMode == false) {
+                loadSaveFile(5, g.player, g.ahead);
+            }
+        //std::cout << "Serafin feature mode activate" << std::endl; 
 			break;
 		case XK_Down:
 			break;
@@ -693,7 +703,7 @@ void deleteAsteroid(Game *g, EnemR *node)
 
 void physics()
 {
-    Flt d0,d1,dist;
+    //Flt d0,d1,dist;
     EnemR *a = g.ahead;
   if(g.player.timestop == false ||rate > 20) {
     //Flt d0,d1,dist;
@@ -708,7 +718,7 @@ void physics()
         Bullet *b = &g.barr[i];
         //How long has bullet been alive?
         double ts = timeDiff(&b->time, &bt);
-        if (ts > 5.0) {
+        if (ts > 2.0) {
             //time to delete the bullet.
             memcpy(&g.barr[i], &g.barr[g.nbullets-1],
                 sizeof(Bullet));
@@ -720,41 +730,30 @@ void physics()
         b->pos[0] += b->vel[0];
         b->pos[1] += b->vel[1];
         //Check for collision with window edges
+        
         if (b->pos[0] < 0.0) {
-            b->pos[0] += (float)gl.xres;
+            b->pos[0] = 0;
+            b->vel[0] = -(b->vel[0]);
         }
         else if (b->pos[0] > (float)gl.xres) {
-            b->pos[0] -= (float)gl.xres;
+            b->pos[0] = 0.0;
+            b->vel[0] = -(b->vel[0]);
         }
         else if (b->pos[1] < 0.0) {
-            b->pos[1] += (float)gl.yres;
+            b->pos[1] = 0.0;
+            b->vel[1] = -(b->vel[1]);
         }
         else if (b->pos[1] > (float)gl.yres) {
-            b->pos[1] -= (float)gl.yres;
+            b->pos[1] -= 0.0;
+            b->vel[1] = -(b->vel[1]);
         }
         ++i;
     }
      //Update asteroid positions
     //EnemR *a = g.ahead;
-    while (a) {
-        a->pos[0] += a->vel[0];
-        a->pos[1] += a->vel[1];
-        //Check for collision with window edges
-        if (a->pos[0] < -100.0) {
-            a->pos[0] += (float)gl.xres+200;
-        }
-        else if (a->pos[0] > (float)gl.xres+100) {
-            a->pos[0] -= (float)gl.xres+200;
-        }
-        else if (a->pos[1] < -100.0) {
-            a->pos[1] += (float)gl.yres+200;
-        }
-        else if (a->pos[1] > (float)gl.yres+100) {
-            a->pos[1] -= (float)gl.yres+200;
-        }
-        a->angle += a->rotate;
-        a = a->next;
-    }
+    extern void trackEnemyMovement(Player, EnemR*&, float, float);
+    trackEnemyMovement(g.player, g.ahead, gl.xres, gl.yres);
+    
   }
     //extern bool swordEnemyCollision(Sword, *EnemR);
 
@@ -817,58 +816,44 @@ void physics()
        }
         a = a->next;
     }
-    //swordEnemyCollision(sword,a);
-
+     a = g.ahead;
     while (a) {
-        //is there a bullet within its radius?
-        int i=0;
-        while (i < g.nbullets) {
-            Bullet *b = &g.barr[i];
-            d0 = b->pos[0] - a->pos[0];
-            d1 = b->pos[1] - a->pos[1];
-            dist = (d0*d0 + d1*d1);
-            if (dist < (a->radius*a->radius)) {
-                //std::cout << "asteroid hit." << std::endl;
-                //this asteroid is hit.
-                if (a->radius > MINIMUM_ASTEROID_SIZE) {
-                    //break it into pieces.
-                    EnemR *ta = a;
-                    buildAsteroidFragment(ta, a);
-                    int r = rand()%10+5;
-                    for (int k=0; k<r; k++) {
-                         //get the next asteroid position in the array
-                        EnemR *ta = new EnemR;
-                        buildAsteroidFragment(ta, a);
-                        //add to front of asteroid linked list
-                        ta->next = g.ahead;
-                        if (g.ahead != NULL)
-                            g.ahead->prev = ta;
-                        g.ahead = ta;
-                        g.nasteroids++;
-                    }
-                } else {
-                    a->color[0] = 1.0;
-                    a->color[1] = 0.1;
-                    a->color[2] = 0.1;
-                    //asteroid is too small to break up
-                    //delete the asteroid and bullet
-                    EnemR *savea = a->next;
-                    deleteAsteroid(&g, a);
-                    a = savea;
-                    g.nasteroids--;
-                }
-                //delete the bullet...
-                memcpy(&g.barr[i], &g.barr[g.nbullets-1], sizeof(Bullet));
-                g.nbullets--;
-                if (a == NULL)
-                    break;
-            }
-            i++;
+    struct timespec bt;
+    clock_gettime(CLOCK_REALTIME, &bt);
+    double ts = timeDiff(&g.bulletTimer, &bt);
+    if (ts > 0.5) {
+        timeCopy(&g.bulletTimer, &bt);
+        if (g.nbullets < MAX_BULLETS) {
+            Bullet *b = &g.barr[g.nbullets];
+            timeCopy(&b->time, &bt);
+
+            b->pos[0] = a->pos[0];
+            b->pos[1] = a->pos[1];
+            b->vel[0] = a->vel[0];
+            b->vel[1] = a->vel[1];
+
+            //convert enemy angle to radians
+            Flt rad = ((a->angle+180) / 360.0f) * PI * 2.0;
+            //convert angle to a vector
+            Flt xdir = cos(rad);
+            Flt ydir = sin(rad);
+            b->pos[0] += xdir*20.0f;
+            b->pos[1] += ydir*20.0f;
+            b->vel[0] += xdir*6.0f + rnd()*0.1;
+            b->vel[1] += ydir*6.0f + rnd()*0.1;
+            b->color[0] = 1.0f;
+            b->color[1] = 1.0f;
+            b->color[2] = 1.0f;
+            g.nbullets++;
         }
-        if (a == NULL)
-            break;
-        a = a->next;
     }
+    a = a->next;
+    }
+
+
+
+
+
 
    /* extern bool swordEnemyCollision(Sword, EnemR);
     swordEnemyCollision(sword, *a);*/
@@ -885,30 +870,7 @@ void playerPhysics()
     //Check for collision with window edges
     extern void playerWallCollision(Player&, float, float);
     playerWallCollision(g.player, gl.xres, gl.yres);
-    /*if (g.player.pos[0] < 0.0) {
-        if (g.player.vel[0] < player.maxSpeed ) {
-            g.player.pos[0] = 0.0;
-            g.player.vel[0] = -g.player.vel[0]*.01;
-        }
-        else {
-            g.player.pos[0] = 0.0;
-            g.player.vel[0] = -g.player.vel[0]*0.00005;
-        }
-
-    }
-    else if (g.player.pos[0] > (float)gl.xres) {
-        //g.ship.pos[0] -= (float)gl.xres;
-        g.player.pos[0] = (float)gl.xres;
-        g.player.vel[0] = -g.player.vel[0]*0.00005;
-    }
-    else if (g.player.pos[1] < 0.0) {
-        g.player.pos[1] = 0.0;
-        g.player.vel[1] = -g.player.vel[1]*0.00005;
-    }
-    else if (g.player.pos[1] > (float)gl.yres) {
-        g.player.pos[1] = (float)gl.yres;
-        g.player.vel[1] = -g.player.vel[1] *0.00005;
-    }*/
+  
 
     //---------------------------------------------------
     //check keys pressed now
@@ -1113,9 +1075,6 @@ void playerPhysics()
     }
 }
 void pauseMenuChoices() {
-    extern void makeSaveFile(int, Player, EnemR*);
-    extern int countSaveFile();
-    extern void loadSaveFile(int, Player&, EnemR*&);
     if (gl.keys[XK_Up]) {
         if (gl.pauseMenuButton <= 0) {
             gl.pauseMenuButton = 3;
@@ -1132,7 +1091,7 @@ void pauseMenuChoices() {
             gl.pauseMenuButton = gl.pauseMenuButton + 1;
         }
     }
-    std::cout <<gl.pauseMenuButton << std::endl;
+    //std::cout <<gl.pauseMenuButton << std::endl;
     if (gl.isPaused) {
         
         if (gl.keys[XK_a] ) {

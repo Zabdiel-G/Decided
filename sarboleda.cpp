@@ -54,6 +54,62 @@ Player::Player() {
      canDodge = true;
      timestop = false;
 }
+//enemy tracking
+void trackEnemyMovement(Player player, EnemR*& enemy, float xres, float yres) 
+{
+     EnemR *a = enemy;
+
+     while (a) {
+        a->pos[0] += a->vel[0];
+        a->pos[1] += a->vel[1];
+        //Check for collision with window edges
+        if (a->pos[0] < 0) {
+            a->pos[0] = 0;
+            a->vel[0] = -a->vel[0];
+        }
+        else if (a->pos[0] > xres) {
+            a->vel[0] = -a->vel[0];
+            a->pos[0] = xres;
+        }
+        else if (a->pos[1] < 0) {
+            a->pos[1] = 0;
+            a->vel[1] = -a->vel[1];
+        }
+        else if (a->pos[1] > yres) {
+            a->pos[1] = yres;
+            a->vel[1] = -a->vel[1];
+        }
+
+        float diffX = a->pos[0] - player.pos[0];
+        float diffY = a->pos[1] - player.pos[1];
+        float angleE = (atan2(diffY, diffX)*180.0f)/PI;
+        float dist = sqrt(diffX*diffX + diffY*diffY);
+
+        if (dist < (50)) {
+        float angleD = atan2(diffY,diffX)*180.0f/PI;
+
+            a->vel[0] += cos(angleD)/4;
+            a->vel[1] += sin(angleD)/4;
+        }
+        float max_speed = 2.0f;
+        float speed = sqrt(a->vel[0]*a->vel[0] + a->vel[1]*a->vel[1]);
+        if (speed > max_speed) {
+        a->vel[0] = a->vel[0] / speed * max_speed;
+        a->vel[1] = a->vel[1] / speed * max_speed;
+        }
+
+        //angle
+        if (a->angle < angleE) {
+            a->angle += 20;
+        }
+        if (a->angle > angleE) {
+            a->angle -= 20;
+        }
+        a = a->next;
+
+    }
+
+}
 bool directoryExists(const char* dirPath) 
 {
     return access(dirPath, F_OK) != -1;
@@ -64,6 +120,21 @@ void makeSaveFile(int q, Player player, EnemR *enemy)
     string directoryName = "SaveFile";
     if (!directoryExists("SaveFile")){
         system("mkdir SaveFile");
+        system("echo > SaveFile/loadfile4.txt");
+        ofstream fout("SaveFile/loadfile4.txt"); 
+        if (fout.is_open()) {
+            fout << 0 << " ";
+            fout << 0 << " ";
+            fout << 0 << " ";
+            fout << 0 << " ";
+            fout << 1 << " ";
+            fout << 20 << " ";
+            fout << 20 << " ";
+            fout << 0 << " ";
+            fout << 0 << " ";
+        }
+        fout.close();
+
     }
     //q = q+1;
     //cout << "succesfully made saveFile" << endl;
@@ -76,7 +147,7 @@ void makeSaveFile(int q, Player player, EnemR *enemy)
     ofstream out(fileName);
     
     if (out.is_open()) {
-        //player information
+        //player informationtonWidth;
         out << player.pos[0] << " "; 
         out << player.pos[1] << " ";
         out << player.pos[2] << " ";
@@ -98,6 +169,7 @@ void makeSaveFile(int q, Player player, EnemR *enemy)
             e = e->next; 
         }
     }
+    out.close();
 
 
 }
@@ -139,14 +211,18 @@ void loadSaveFile(int fileNumber, Player& player, EnemR*& enemy)
     fin >> numberOfEnemies;
     //cout << "numberOfEnemies"<< numberOfEnemies << endl;
     EnemR* currentEnemy = enemy;
-
+    EnemR* lastEnemy = nullptr;
     for (int i = 0; i < numberOfEnemies; i++) {
         fin >> currentEnemy->pos[0];
         fin >> currentEnemy->pos[1];
         fin >> currentEnemy->pos[2];
         fin >> currentEnemy->angle;
         // move to the next enemy in the linked list
+        lastEnemy = currentEnemy;
         currentEnemy = currentEnemy->next;
+    }
+    if (lastEnemy != nullptr) {
+        lastEnemy->next = nullptr;
     }
 }
 void pauseMenu(int i, float xres, float yres, int flag) 
@@ -168,7 +244,7 @@ void pauseMenu(int i, float xres, float yres, int flag)
     float buttonY[3];
     float buttonWidth = boxWidth - 20.0f;
     float buttonHeight = (boxHeight * 0.2f);
-    float buttonX = x + (boxWidth - buttonWidth)/2.0f;
+    float buttonX = ((xres - boxWidth)/2.0f) - 200;
     for (int j = 0; j < 4; j++) {
     buttonY[j] = y + boxHeight - (boxHeight/2.5) - j * (buttonHeight + 10.0f);
     }

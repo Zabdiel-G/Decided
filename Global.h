@@ -31,6 +31,8 @@ class Global
         bool upKeyPressed;
         bool downKeyPressed;
         int menuFlag;
+        GLuint eyeballTexture;
+        GLuint fireTexture;
 
         Global() 
         {

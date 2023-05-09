@@ -27,6 +27,7 @@
 #include "sarboleda.h"
 #include "EnemR.h"
 #include "Global.h"
+//#include <SOIL.h>
 #define MAX_ASTEROIDS 10
 
 
@@ -53,6 +54,9 @@ const float gravity = -0.2f;
 const int MAX_BULLETS = 100;
 const Flt MINIMUM_ASTEROID_SIZE = 15.0;
 
+enemImage img("eyeball.jpg");
+enemImage img2("fireball.jpg");
+
 //-----------------------------------------------------------------------------
 //Setup timers
 const double dodgeCooldown = 2.0;
@@ -71,15 +75,15 @@ extern void messageZ();
 extern void messageK();
 extern void messageFire();
 extern void messageF();
-extern void rendEnemR(EnemR*);
+extern void rendEnemR(EnemR*, GLuint);
 extern void rendBullet(int, Bullet* barr);
 extern void buildAsteroidFragment(EnemR *ta, EnemR *a);
-
 
 using namespace std::chrono;
 Sword sword;
 Player player;
 extern struct Ability abilities[3];
+
 bool serafinFeatureMode = false;
 
 
@@ -146,6 +150,8 @@ public:
 				//a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
 				a->vert[i][0] = sin(angle) * r2 * 2;
 				a->vert[i][1] = cos(angle) * r2 * 2;
+                a->tcoord[i][0] = (sin(angle) + 0.0) / 2.0 + 0.5;
+                a->tcoord[i][1] = (cos(angle) + 0.0) / 2.0 + 0.5;
 				angle += inc;
 			}
 			a->pos[0] = (Flt)(rand() % gl.xres);
@@ -410,10 +416,10 @@ int main()
    		}
 
 		render();
-        if(gl.obstR){
-            rendEnemR(g.ahead);
+        if(gl.obstR)
+        {
             rendBullet(g.nasteroids, g.barr);
-
+            rendEnemR(g.ahead, gl.eyeballTexture);
         }
 		x11.swapBuffers();
 	}
@@ -443,6 +449,27 @@ void init_opengl(void)
 	//Do this to allow fonts
 	glEnable(GL_TEXTURE_2D);
 	initialize_fonts();
+
+    glGenTextures(1, &gl.eyeballTexture);
+
+    int w = img.width;
+    int h = img.height;
+    glBindTexture(GL_TEXTURE_2D, gl.eyeballTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
+                            GL_RGB, GL_UNSIGNED_BYTE, img.data);
+
+    glGenTextures(1, &gl.fireTexture);
+
+    int w2 = img2.width;
+    int h2 = img2.height;
+    glBindTexture(GL_TEXTURE_2D, gl.fireTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, w2, h2, 0,
+                            GL_RGB, GL_UNSIGNED_BYTE, img2.data);
+
 }
 
 
@@ -1188,7 +1215,7 @@ void render()
 	r.bot = gl.yres - 20;
 	r.left = 10;
 	r.center = 0;
-	ggprint8b(&r, 16, 0x00ff0000, "3350 - Asteroids");
+	ggprint8b(&r, 16, 0x00ff0000, "3350 - DECIDED");
 	ggprint8b(&r, 16, 0x00ffff00, "n bullets: %i", g.nbullets);
 	ggprint8b(&r, 16, 0x00ffff00, "n asteroids: %i", g.nasteroids);
     int roundedDodge = std::round(abilities[0].timer);
@@ -1265,7 +1292,7 @@ void render()
     if (gl.isPaused || gl.isLoad || gl.isSave) {
         pauseMenu(gl.pauseMenuButton, gl.xres, gl.yres, gl.menuFlag);
     }
-}
+   }
 
 
 

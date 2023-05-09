@@ -8,6 +8,7 @@
 #include <GL/glut.h>
 #include "EnemR.h"
 //#include "Global.h"
+#include <unistd.h>
 #include <cmath>
 
 using namespace std::chrono;
@@ -19,9 +20,57 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 #define PI 3.141592653589793
 #define rnd() (((Flt)rand())/(Flt)RAND_MAX)
 
+//enemImage img("./images/eyeball.png");
+
 void messageZ()
 {
     std::cout << "Zabs Feature mode has been Entered" << std::endl;
+}
+
+//Enemy Image
+enemImage::~enemImage() { delete [] data; }
+
+enemImage::enemImage(const char *fname) {
+    if (fname[0] == '\0')
+            return;
+    int ppmFlag = 0;
+        char name[40];
+    strcpy(name, fname);
+    int slen = strlen(name);
+    char ppmname[80];
+    if (strncmp(name+(slen-4), ".ppm", 4) == 0)
+            ppmFlag = 1;
+        if (ppmFlag) {
+            strcpy(ppmname, name);
+        } else {
+            name[slen-4] = '\0';
+            sprintf(ppmname,"%s.ppm", name);
+        char ts[100];
+        sprintf(ts, "convert %s %s", fname, ppmname);
+        system(ts);
+    }
+    FILE *fpi = fopen(ppmname, "r");
+    if (fpi) {
+        char line[200];
+        fgets(line, 200, fpi);
+        fgets(line, 200, fpi);
+        //skip comments and blank lines
+        while (line[0] == '#' || strlen(line) < 2)
+            fgets(line, 200, fpi);
+        sscanf(line, "%i %i", &width, &height);
+        fgets(line, 200, fpi);
+        //get pixel data
+        int n = width * height * 3;
+        data = new unsigned char[n];
+        for (int i=0; i<n; i++)
+            data[i] = fgetc(fpi);
+        fclose(fpi);
+    } else {
+        printf("ERROR opening image: %s\n",ppmname);
+        exit(0);
+    }
+    if (!ppmFlag)
+        unlink(ppmname);
 }
 
 //ENEMY FRAGMENTS...............................................................
@@ -53,7 +102,7 @@ void buildAsteroidFragment(EnemR *ta, EnemR *a)
 
 
 //RENDER FOR THE RANGED ENEMY..................................................
-void rendEnemR(EnemR* ahead)
+void rendEnemR(EnemR* ahead, GLuint eyeballText)
 {
     EnemR *a = ahead;
     while (a)
@@ -61,14 +110,16 @@ void rendEnemR(EnemR* ahead)
         glColor3fv(a->color);
         glPushMatrix();
         glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
-        glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
-        //glBegin(GL_LINE_LOOP);
-	    glBegin(GL_QUADS);
+        glRotatef(a->angle, 0.0f, 0.0f, 2.0f);
+        glBindTexture(GL_TEXTURE_2D, eyeballText);
+        glBegin(GL_TRIANGLE_FAN);
+	    //glBegin(GL_QUADS);
         //Log("%i verts\n",a->nverts);
 
         //for (int j=0; j<a->nverts; j++)
-        for (int j=0; j<4; j++)
+        for (int j=0; j<a->nverts; j++)
         {
+            glTexCoord2f(a->tcoord[j][0],a->tcoord[j][1]);
             glVertex2f(a->vert[j][0], a->vert[j][1]);
         }
         glEnd();
